@@ -8,8 +8,8 @@ import HeraAgent from './game/HeraAgent.jsx';
 import AresAgent from './game/AresAgent.jsx';
 import HadesAgent from './game/HadesAgent.jsx';
 import IslandNpcs from './game/IslandNpcs.jsx';
-import GodChat, { useGodChat } from './game/ZeusChat.jsx';
-import ThroneRoom from './game/ThroneRoom.jsx';
+import OlympusHub from './game/OlympusHub.jsx';
+import { loadHub } from './game/hubState.js';
 
 const agents = [
   { id:'zeus', name:'Zeus', role:'Founder / Boss · Executive overview', zone:'THUNDER CITADEL', icon:'ϟ', color:'#f6cf76', status:'Commanding', task:'Review treasury rebalance',  metric:'$2.84M', label:'TREASURY TVL', detail:'Governance, treasury and realm-wide performance at a glance.', stats:[['Treasury','2.84M OLY'],['Active agents','7 / 7'],['Realm uptime','99.98%'],['Open proposals','03']], activity:['Treasury rebalance approved','Realm epoch 208 finalized','Validator quorum: 98.4%'] },
@@ -26,7 +26,6 @@ const agents = [
 
 // Hephaestus, Hermes, and Apollo stay in `agents` so they can be mapped later.
 const hiddenOnMap = new Set(['hephaestus', 'hermes', 'apollo']);
-const chatAgents = new Set(['zeus', 'demeter']);
 const mapAgents = agents.filter((agent) => !hiddenOnMap.has(agent.id));
 
 const divineCharacters = {
@@ -62,13 +61,13 @@ function App() {
   const [toggles, setToggles] = useState({ alerts:true, automation:true, public:false });
   const [notice, setNotice] = useState('');
   const mapFrameRef = useRef(null);
-  const zeusChat = useGodChat('zeus');
-  const demeterChat = useGodChat('demeter');
-  const godChats = { zeus: zeusChat, demeter: demeterChat };
+  const [hubMode, setHubMode] = useState(() => loadHub().mode);
+  const [hubGod, setHubGod] = useState(() => loadHub().selected);
   const filtered = useMemo(() => chatLines.filter(line => channel === 'GLOBAL' || line[0] === channel || line[0] === 'SYSTEM'), [channel]);
   const act = (text) => { setNotice(text); window.setTimeout(() => setNotice(''), 2400); };
-  const openAgent = (agent) => { setSelected(agent); setTab(chatAgents.has(agent.id) ? 'CHAT' : 'OVERVIEW'); };
-  const runSlot = (index) => { const a = mapAgents[index % mapAgents.length]; openAgent(a); act(`${a.name.toUpperCase()} ACTION READY`); };
+  const focusHub = (agent) => { setHubGod(agent.id); setHubMode((current) => current === 'hidden' ? 'small' : current); setSelected(null); };
+  const openDomain = (agent) => { setSelected(agent); setTab('OVERVIEW'); };
+  const runSlot = (index) => { const a = mapAgents[index % mapAgents.length]; focusHub(a); act(`${a.name.toUpperCase()} ACTION READY`); };
 
   return <div className="olympus-app">
     <div className="ambient ambient-one"/><div className="ambient ambient-two"/><div className="starfield"/>
@@ -95,13 +94,13 @@ function App() {
                 style={{ left:`${x}%`, top:`${y}%`, zIndex:Math.round(y * 10) }}
               >
                 <span className="god-name-tag">{agent.name.toUpperCase()}</span>
-                <button type="button" className="god-hit" aria-label={`${agent.name}, ${job}`} onClick={() => openAgent(agent)}>
+                <button type="button" className="god-hit" aria-label={`${agent.name}, ${job}`} onClick={() => focusHub(agent)}>
                   <Character className="world-map-sprite" isActive />
                 </button>
                 <span className="god-sign" data-side={signSide[agent.id] || 'right'}>{job}</span>
               </div>;
             })}
-            <ZeusWorldCharacter frameRef={mapFrameRef} enabled={!selected} onOpen={() => openAgent(agents.find((agent) => agent.id === 'zeus'))} />
+            <ZeusWorldCharacter frameRef={mapFrameRef} enabled={!selected} onOpen={() => focusHub(agents.find((agent) => agent.id === 'zeus'))} />
             <IslandNpcs />
           </div>
         </div>
@@ -113,10 +112,10 @@ function App() {
         <div className="world-coordinate">X: 021 <i>·</i> Y: 084 <i>·</i> REALM 001</div><div className="world-tip"><span>✥</span> SELECT A DIVINE AGENT TO OPEN THEIR DOMAIN</div>
         {notice&&<div className="toast"><span>✦</span>{notice}</div>}
       </section>
-      <ThroneRoom />
+      <OlympusHub agents={mapAgents} selectedId={hubGod} onSelect={setHubGod} mode={hubMode} onMode={setHubMode} onOpenDomain={openDomain} />
       <div className="realm-footer"><div><span className="footer-sigil">✧</span><span><b>THE FLOATING ISLES</b><small>Connected by the celestial leyline</small></span></div><div className="footer-legend"><i/> AGENT ONLINE <i className="legend-gold"/> QUEST AVAILABLE <i className="legend-lock"/> LOCKED</div><span className="footer-build">BUILD 2.08.4 <i>·</i> OLYMPUS NETWORK</span></div>
       <section className="realm-roster" aria-label="Divine agent roster">
-        {mapAgents.map((agent,index)=><button key={agent.id} className="roster-agent" style={{'--agent':agent.color}} onClick={()=>openAgent(agent)}>
+        {mapAgents.map((agent,index)=><button key={agent.id} className="roster-agent" style={{'--agent':agent.color}} onClick={()=>openDomain(agent)}>
           <span className="roster-index">{String(index+1).padStart(2,'0')}</span>
           <span className="roster-icon">{agent.icon}</span>
           <span className="roster-copy"><b>{agent.name}</b><small>{agent.role.split(' · ')[0]}</small></span>
@@ -127,12 +126,11 @@ function App() {
     <aside className="chat-box"><div className="panel-title"><span className="title-glyph">⌘</span><div><b>REALM CHAT</b><small>12,408 ONLINE</small></div><button onClick={()=>act('CHAT WINDOW MINIMIZED')}>−</button></div><div className="chat-tabs">{['GLOBAL','GUILD','SYSTEM'].map(c=><button className={channel===c?'active':''} onClick={()=>setChannel(c)} key={c}>[{c}]</button>)}</div><div className="chat-feed">{filtered.map((l,i)=><div key={i} className={`chat-line ${l[0]==='SYSTEM'?'system':''}`}><span>[{l[0]}]</span><b>{l[1]}:</b><p>{l[2]}</p></div>)}</div><div className="chat-input"><span>›</span><input placeholder="Whisper to Olympus…" onKeyDown={e=>{if(e.key==='Enter'&&e.currentTarget.value){act('MESSAGE SENT TO REALM');e.currentTarget.value='';}}}/><button onClick={()=>act('MESSAGE SENT TO REALM')}>↗</button></div></aside>
     <div className="quest-pill"><i>✦</i><span><small>DAILY QUEST</small><b>Visit 3 Divine Domains</b></span><strong>1/3</strong><div className="quest-track"><i/></div></div>
     <div className="hotbar"><div className="hotbar-label"><b>DIVINE ACTIONS</b><small>QUICK CAST</small></div>{mapAgents.map((a,i)=><button key={a.id} title={`${i+1} · ${a.name}: ${a.role}`} onClick={()=>runSlot(i)} style={{'--slot-color':a.color}}><span>{a.icon}</span><small>{i+1}</small></button>)}</div>
-    {selected&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setSelected(null)}}><section className={`agent-modal${chatAgents.has(selected.id)?' zeus-modal':''}`} style={{'--agent':selected.color}} role="dialog" aria-modal="true" aria-label={`${selected.name} domain details`}><header className="modal-head"><div className="modal-icon">{selected.icon}</div><div className="modal-title"><span>{selected.zone} <i/> <em>AGENT ACTIVE</em></span><h2>{selected.name}<small> · {selected.role.split(' · ')[0]}</small></h2></div><button className="modal-close" onClick={()=>setSelected(null)}>×</button></header><p className="modal-desc">{selected.detail}</p><nav className="modal-tabs">{(chatAgents.has(selected.id)?['CHAT','OVERVIEW','ACTIVITY','CONTROLS']:['OVERVIEW','ACTIVITY','CONTROLS']).map(t=><button key={t} className={tab===t?'active':''} onClick={()=>setTab(t)}>{t}</button>)}</nav>
-      {tab==='CHAT'&&godChats[selected.id]&&<GodChat agentId={selected.id} chat={godChats[selected.id]} />}
+    {selected&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setSelected(null)}}><section className="agent-modal" style={{'--agent':selected.color}} role="dialog" aria-modal="true" aria-label={`${selected.name} domain details`}><header className="modal-head"><div className="modal-icon">{selected.icon}</div><div className="modal-title"><span>{selected.zone} <i/> <em>AGENT ACTIVE</em></span><h2>{selected.name}<small> · {selected.role.split(' · ')[0]}</small></h2></div><button className="modal-close" onClick={()=>setSelected(null)}>×</button></header><p className="modal-desc">{selected.detail}</p><nav className="modal-tabs">{['OVERVIEW','ACTIVITY','CONTROLS'].map(t=><button key={t} className={tab===t?'active':''} onClick={()=>setTab(t)}>{t}</button>)}</nav>
       {tab==='OVERVIEW'&&<><div className="metric-hero"><div><small>{selected.label}</small><b>{selected.metric}</b></div><span>↗ 8.4% <small>THIS WEEK</small></span></div><div className="metric-grid">{selected.stats.map(([k,v])=><div key={k}><small>{k}</small><b>{v}</b></div>)}</div><div className="activity-head"><b>RECENT ACTIVITY</b><button onClick={()=>setTab('ACTIVITY')}>VIEW ALL ↗</button></div><div className="activity-list">{selected.activity.slice(0,2).map((x,i)=><div key={x}><i className={i===0?'activity-dot':''}/><span>{x}</span><small>{i===0?'NOW':'4M AGO'}</small></div>)}</div></>}
       {tab==='ACTIVITY'&&<div className="activity-list expanded">{selected.activity.map((x,i)=><div key={x}><i className={i===0?'activity-dot':''}/><span>{x}</span><small>{i===0?'NOW':`${i*4}M AGO`}</small></div>)}</div>}
       {tab==='CONTROLS'&&<div className="control-list">{[['alerts','Live alerts','Receive status and risk notifications.'],['automation','Agent automation','Allow scheduled agent actions.'],['public','Public activity','Show domain activity in the realm feed.']].map(([id,title,sub])=><div key={id}><span><b>{title}</b><small>{sub}</small></span><button className={`toggle ${toggles[id]?'on':''}`} onClick={()=>setToggles({...toggles,[id]:!toggles[id]})}><i/></button></div>)}<button className="primary-action" onClick={()=>act(`${selected.name.toUpperCase()} DASHBOARD OPENED`)}>OPEN {selected.name.toUpperCase()} DASHBOARD ↗</button></div>}
-      <footer className="modal-foot"><span>◈ SECURED BY OLYMPUS NETWORK</span><button onClick={()=>act(`${selected.name.toUpperCase()} QUEST STARTED`)}>✦ START A QUEST</button></footer></section></div>}
+      <footer className="modal-foot"><span>◈ SECURED BY OLYMPUS NETWORK</span><span className="modal-foot-actions"><button onClick={()=>focusHub(selected)}>OPEN CHAT</button><button onClick={()=>act(`${selected.name.toUpperCase()} QUEST STARTED`)}>✦ START A QUEST</button></span></footer></section></div>}
     <style>{styles}</style><style>{layoutOverrides}</style>
   </div>;
 }
@@ -254,29 +252,72 @@ const layoutOverrides = `
 .zeus-chat-form button{align-self:stretch;min-width:72px;padding:0 12px;border:2px solid #e6c56a;background:#2a2418;color:#f6e2a4;font:700 9px var(--mono);letter-spacing:.12em;cursor:pointer;box-shadow:2px 2px 0 #060b12}
 .zeus-chat-form button:disabled{opacity:.55;cursor:wait}
 @media(prefers-reduced-motion:reduce){.zeus-bubble{transition:none}}
-.throne-room{position:relative;z-index:6;display:flex;flex-direction:column;overflow:hidden;border-top:2px solid #e6c56a;background:#101820;box-shadow:0 -3px 0 #060b12}
-.throne-toggle{display:flex;align-items:center;gap:8px;width:100%;padding:7px 10px;border:0;background:#1c140c;color:#f6e2a4;font:700 9px var(--mono);letter-spacing:.14em;cursor:pointer;text-align:left}
-.throne-crest{display:grid;place-items:center;width:18px;height:18px;border:2px solid #e6c56a;background:#2a2418;color:#f6cf76;font:14px Georgia,serif}
-.throne-toggle b{color:#f6e2a4}
-.throne-toggle small{color:#d7c581;font-weight:500;letter-spacing:.08em}
-.throne-toggle em{margin-left:auto;color:#8d9eb2;font-style:normal;font-size:8px;letter-spacing:.08em}
-.throne-toggle i{color:#e6c56a;font-style:normal}
-.throne-body{display:flex;flex-direction:column;min-height:0;border-top:2px solid #6b4322}
-.throne-log{display:flex;flex-direction:column;gap:6px;height:112px;overflow:auto;padding:8px 10px;background:#0c1422}
-.throne-empty{margin:auto;color:#9aa6b8;font:8px/1.45 var(--mono);letter-spacing:.04em;text-align:center}
-.throne-line{display:flex;gap:8px;align-items:flex-start}
-.throne-icon{display:grid;place-items:center;flex:0 0 22px;height:22px;border:2px solid #6b4322;background:#2a2418;font-size:12px;box-shadow:2px 2px 0 #060b12}
-.throne-line b{display:block;font:700 8px var(--mono);letter-spacing:.12em}
-.throne-line p{margin:2px 0 0;color:#e7edf4;font-size:12px;line-height:1.4;white-space:pre-wrap}
-.throne-line-owner{align-self:flex-end;flex-direction:row-reverse;text-align:right}
-.throne-line-owner p{color:#f6e7c2}
-.throne-error{margin:0;padding:6px 8px;border-top:2px solid #a85a52;background:#2a1414;color:#ffc7bf;font:8px/1.4 var(--mono)}
-.throne-form{display:flex;gap:6px;padding:6px 8px 8px;background:#101820}
-.throne-form input{flex:1;min-width:0;padding:8px;border:2px solid #6b4322;background:#f3e0b0;color:#3a2712;font:12px/1.3 var(--mono);outline:none}
-.throne-form input:disabled{opacity:.7}
-.throne-form button{min-width:72px;padding:0 12px;border:2px solid #e6c56a;background:#2a2418;color:#f6e2a4;font:700 9px var(--mono);letter-spacing:.12em;cursor:pointer;box-shadow:2px 2px 0 #060b12}
-.throne-form button:disabled{opacity:.55;cursor:wait}
-@media(max-width:760px){.throne-log{height:84px}.throne-toggle{gap:6px;padding:6px 8px;font-size:8px}.throne-toggle small{display:none}.throne-line p{font-size:11px}}
+.modal-foot-actions{display:flex;gap:6px}
+.olympus-hub{position:relative;z-index:6;display:flex;flex-direction:column;overflow:hidden;border-top:2px solid #e6c56a;background:#101820;box-shadow:0 -3px 0 #060b12;color:#e7edf4}
+.hub-bar{display:flex;align-items:center;gap:8px;min-height:32px;padding:4px 8px;background:#1c140c}
+.hub-bar>b{color:#f6e2a4;font:700 9px var(--mono);letter-spacing:.14em}
+.hub-sizes{display:flex;gap:4px}
+.hub-sizes button{padding:3px 6px;border:2px solid #6b4322;background:#2a2418;color:#d7c581;font:700 8px var(--mono);letter-spacing:.08em;cursor:pointer}
+.hub-sizes button[aria-pressed="true"]{border-color:#e6c56a;color:#f6e2a4}
+.hub-bar>em{margin-left:auto;color:#8d9eb2;font:7px var(--mono);font-style:normal;letter-spacing:.08em}
+.hub-body{display:flex;min-height:0;border-top:2px solid #6b4322}
+.olympus-hub.is-small .hub-body{height:220px}
+.olympus-hub.is-half .hub-body{height:min(42vh,380px)}
+.hub-roster{display:flex;flex-direction:column;flex:0 0 188px;overflow:auto;background:#140f0c;border-right:2px solid #6b4322}
+.hub-god{display:flex;align-items:center;gap:6px;width:100%;min-height:32px;padding:3px 6px;border:0;border-bottom:1px solid #2a2118;background:transparent;color:#f6e7c2;text-align:left;cursor:pointer}
+.hub-god.is-throne{border-bottom:2px solid #e6c56a}
+.hub-god.is-selected{background:color-mix(in srgb, var(--agent) 22%, #1a140c);box-shadow:inset 3px 0 0 var(--agent)}
+.hub-avatar-wrap{position:relative;flex:0 0 26px}
+.hub-avatar{display:grid;place-items:center;width:26px;height:26px;overflow:hidden;border:2px solid #6b4322;background:#101820;box-shadow:2px 2px 0 #060b12}
+.hub-avatar img{width:100%;height:100%;object-fit:cover;object-position:center 10%;image-rendering:pixelated}
+.hub-owner{color:#f6e2a4;font:14px Georgia,serif}
+.hub-dot{position:absolute;right:-2px;bottom:-2px;width:7px;height:7px;border:1px solid #111;background:#6d7686}
+.hub-dot.online{background:#6de5ae;box-shadow:0 0 4px #6de5ae}
+.hub-dot.thinking{background:#f0d36a;box-shadow:0 0 5px #f0d36a;animation:hub-pulse .8s steps(2,end) infinite}
+.hub-badge{position:absolute;top:-5px;right:-6px;min-width:12px;padding:0 2px;border:2px solid #1a100c;background:#c4483a;color:#fff6f2;font:700 7px/10px var(--mono);font-style:normal;text-align:center}
+.hub-god-copy{min-width:0;flex:1}
+.hub-god-copy b,.hub-god-copy small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hub-god-copy b{color:var(--agent);font:700 8px var(--mono);letter-spacing:.06em}
+.hub-god-copy small{margin-top:1px;color:#9aa6b8;font:6px var(--mono);letter-spacing:.04em}
+.hub-chat{display:flex;flex-direction:column;flex:1;min-width:0;background:#0c1422}
+.hub-chat-head{display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:2px solid var(--accent);background:#101820}
+.hub-chat-head div{flex:1;min-width:0}
+.hub-chat-head b,.hub-chat-head small{display:block}
+.hub-chat-head b{color:var(--accent);font:700 10px var(--mono);letter-spacing:.1em}
+.hub-chat-head small{margin-top:2px;color:#9aa6b8;font:7px var(--mono)}
+.hub-chat-head>button,.hub-form button{border:2px solid var(--accent);background:#2a2418;color:#f6e2a4;font:700 8px var(--mono);letter-spacing:.1em;cursor:pointer;box-shadow:2px 2px 0 #060b12}
+.hub-chat-head>button{padding:6px 8px}
+.hub-log{display:flex;flex-direction:column;gap:6px;flex:1;min-height:0;overflow:auto;padding:8px}
+.hub-empty,.hub-offline p{margin:auto;color:#9aa6b8;font:8px/1.45 var(--mono);text-align:center}
+.hub-bubble{display:flex;gap:6px;max-width:92%;align-items:flex-start}
+.hub-bubble.user{align-self:flex-end;flex-direction:row-reverse;text-align:right}
+.hub-bubble small{display:block;margin-bottom:2px;color:var(--accent);font:700 7px var(--mono);letter-spacing:.1em}
+.hub-bubble p{margin:0;padding:6px 7px;border:2px solid color-mix(in srgb, var(--accent), #3a465c 35%);background:#152033;color:#e7edf4;font-size:12px;line-height:1.4;white-space:pre-wrap}
+.hub-bubble.user p{background:#2a2416;color:#f6e7c2}
+.hub-typing{display:flex;align-items:center;gap:4px;margin:0;color:#f0d36a;font:700 8px var(--mono);letter-spacing:.08em}
+.hub-typing i{width:5px;height:5px;background:#f0d36a;animation:hub-pulse .8s steps(2,end) infinite}
+.hub-typing i:nth-child(2){animation-delay:.15s}.hub-typing i:nth-child(3){animation-delay:.3s}
+.hub-error{margin:0;padding:6px 8px;border-top:2px solid #a85a52;background:#2a1414;color:#ffc7bf;font:8px/1.4 var(--mono)}
+.hub-form{display:flex;gap:6px;padding:6px 8px 8px}
+.hub-form input{flex:1;min-width:0;padding:8px;border:2px solid #6b4322;background:#f3e0b0;color:#3a2712;font:12px/1.3 var(--mono);outline:none}
+.hub-form input:disabled{opacity:.7}
+.hub-form button{min-width:68px;padding:0 10px}
+.hub-form button:disabled{opacity:.55;cursor:wait}
+.hub-offline{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;flex:1;padding:16px;text-align:center}
+.hub-offline .hub-avatar{width:54px;height:54px}
+.hub-offline b{color:var(--accent);font:700 14px var(--mono);letter-spacing:.12em}
+.hub-offline small{color:#c8d0da;font:8px var(--mono)}
+@keyframes hub-pulse{50%{opacity:.35}}
+@media(max-width:760px){
+  .olympus-hub.is-small .hub-body{height:236px}
+  .hub-body{flex-direction:column}
+  .hub-roster{flex:0 0 auto;flex-direction:row;width:100%;height:62px;overflow-x:auto;overflow-y:hidden;border-right:0;border-bottom:2px solid #6b4322}
+  .hub-god{flex:0 0 auto;width:58px;min-height:0;height:60px;flex-direction:column;justify-content:center;gap:2px;padding:4px}
+  .hub-god-copy small{display:none}
+  .hub-god-copy b{font-size:6px;letter-spacing:0}
+  .hub-bubble p{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){.hub-dot.thinking,.hub-typing i{animation:none}}
 `;
 
 export default App;

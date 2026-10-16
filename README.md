@@ -19,9 +19,9 @@ npm run dev
 
 Kalau kedua kunci ada, OpenAI yang dipakai, kecuali `LLM_PROVIDER` diset ke `openai` atau `deepseek`. Tanpa kunci, chat menampilkan pesan yang jelas. `LLM_PROVIDER=mock` membalas tanpa memanggil model, untuk uji lokal.
 
-Bicara dengan Zeus atau Demeter lewat sprite mereka di peta. Percakapan tiap dewa tersimpan terpisah. Modal dewa lain tidak berubah.
+Klik dewa di peta membuka Olympus Hub di bawah peta dan memilih dewa itu. Modal domain hanya berisi Overview, Activity, dan Controls, plus tombol Open chat yang kembali ke hub.
 
-Di bawah peta ada throne room yang selalu terlihat dan bisa dilipat. Pemilik bicara ke Zeus di situ tanpa membuka modal. Zeus mengarahkan pertanyaan: dewa yang chat-nya aktif (sekarang Demeter) diajak lewat panggilan model kedua, lalu Zeus merangkum. Dewa yang belum aktif disebut belum online, tanpa jawaban karangan. Paling banyak dua konsultasi per pesan. Utas throne room tidak dicampur dengan chat di modal Zeus.
+Hub punya dua bagian dan tiga tinggi: small, half, dan hidden. Kiri adalah roster avatar (Hephaestus, Hermes, dan Apollo tetap disembunyikan). Kanan adalah chat dewa yang dipilih. Layar sempit menaruh roster sebagai strip horizontal di atas chat. Zeus dan Demeter online. Dewa lain abu-abu, berlabel coming soon, dan panelnya hanya menampilkan peran. Throne Room Zeus menempel di atas roster: itu satu-satunya utas Zeus, termasuk saat ia mengarahkan pertanyaan ke dewa yang online. Riwayat tiap dewa tersimpan di browser lewat localStorage.
 
 Perintah terpisah: `npm run dev:web` hanya peta, `npm run dev:api` hanya server chat. Setelah `npm run build`, `npm start` menyajikan build serta `POST /api/chat`, `POST /api/chat/:agent`, dan `POST /api/room` dari proses yang sama.
 
@@ -30,8 +30,8 @@ Perintah terpisah: `npm run dev:web` hanya peta, `npm run dev:api` hanya server 
 - `src/assets/olympus-web3-map.jpg` — peta pulau tanpa label dan tanpa judul.
 - `src/assets/npcs/` — sprite NPC berlatar transparan, dipotong dari lembar karakter.
 - `src/App.jsx` — peta, tag nama, papan peran, judul HUD, dan panel agen.
-- `src/game/ZeusChat.jsx` — panel chat yang sama untuk tiap dewa. Klien memanggil `POST /api/chat/:agent`.
-- `src/game/ThroneRoom.jsx` — ruang chat di bawah peta. Klien memanggil `POST /api/room`.
+- `src/game/OlympusHub.jsx` — hub di bawah peta. Zeus memakai `POST /api/room`. Dewa lain yang online memakai `POST /api/chat/:agent`.
+- `src/game/hubState.js` — tinggi hub, riwayat, dan hitungan pesan yang belum dibaca.
 - `server/index.js` — `POST /api/chat`, `POST /api/chat/:agent`, `POST /api/room`, dan `GET /api/health`.
 - `server/room.js` — Zeus mengarahkan pertanyaan, memanggil paling banyak dua dewa yang aktif, lalu merangkum.
 - `server/personas.js` — persona tiap dewa. Zeus dan Demeter aktif; dewa lain tinggal diaktifkan di config ini.
