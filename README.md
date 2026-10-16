@@ -21,7 +21,11 @@ Kalau kedua kunci ada, OpenAI yang dipakai, kecuali `LLM_PROVIDER` diset ke `ope
 
 Klik dewa di peta membuka Olympus Hub di bawah peta dan memilih dewa itu. Modal domain hanya berisi Overview, Activity, dan Controls, plus tombol Open chat yang kembali ke hub.
 
-Hub punya dua bagian dan tiga tinggi: small, half, dan hidden. Kiri adalah roster avatar (Hephaestus, Hermes, dan Apollo tetap disembunyikan). Kanan adalah chat dewa yang dipilih. Layar sempit menaruh roster sebagai strip horizontal di atas chat. Zeus dan Demeter online. Dewa lain abu-abu, berlabel coming soon, dan panelnya hanya menampilkan peran. Throne Room Zeus menempel di atas roster: itu satu-satunya utas Zeus, termasuk saat ia mengarahkan pertanyaan ke dewa yang online. Riwayat tiap dewa tersimpan di browser lewat localStorage.
+Hub punya dua bagian dan tiga tinggi: small, half, dan hidden. Kiri adalah roster avatar (Hephaestus, Hermes, dan Apollo tetap disembunyikan). Kanan adalah chat dewa yang dipilih. Layar sempit menaruh roster sebagai strip horizontal di atas chat. Zeus, Demeter, dan Hades online. Dewa lain abu-abu, berlabel coming soon, dan panelnya hanya menampilkan peran. Throne Room Zeus menempel di atas roster: itu satu-satunya utas Zeus, termasuk saat ia mengarahkan pertanyaan ke dewa yang online. Riwayat tiap dewa tersimpan di browser lewat localStorage.
+
+Hades adalah analis onchain. Ia hanya membaca lewat RPC publik (Ethereum, Base, Arbitrum, BSC, Polygon) dan tidak pernah menandatangani transaksi atau menyimpan private key. URL RPC bisa ditimpa lewat `ETH_RPC_URL`, `BASE_RPC_URL`, `ARBITRUM_RPC_URL`, `BSC_RPC_URL`, dan `POLYGON_RPC_URL`. Setiap angka, alamat, atau hash yang ia sebut harus berasal dari hasil alat dan dikutip (chain, blok atau hash transaksi, sumber rpc/explorer). Kalau data tidak ada, ia mengatakan tidak tersedia. Baris kecil `onchain lookup` di chat menampilkan nama alat dan argumennya. `ETHERSCAN_API_KEY` hanya untuk riwayat transaksi; tanpa kunci, lookup RPC tetap jalan dan riwayat dilaporkan tidak tersedia.
+
+Kalau pertanyaan di utas Demeter butuh data onchain (status transaksi, saldo, cek token atau kontrak), server meminta Hades sekali, menampilkan jawabannya dengan nama dan avatar Hades, lalu Demeter menjelaskan dengan nada dukungan. Pertanyaan "dompet tidak tersambung" tidak memanggil Hades. Throne Room juga mengarahkan pertanyaan onchain ke Hades, paling banyak dua konsultasi per pesan.
 
 Perintah terpisah: `npm run dev:web` hanya peta, `npm run dev:api` hanya server chat. Setelah `npm run build`, `npm start` menyajikan build serta `POST /api/chat`, `POST /api/chat/:agent`, dan `POST /api/room` dari proses yang sama.
 
@@ -33,9 +37,11 @@ Perintah terpisah: `npm run dev:web` hanya peta, `npm run dev:api` hanya server 
 - `src/game/OlympusHub.jsx` — hub di bawah peta. Zeus memakai `POST /api/room`. Dewa lain yang online memakai `POST /api/chat/:agent`.
 - `src/game/hubState.js` — tinggi hub, riwayat, dan hitungan pesan yang belum dibaca.
 - `server/index.js` — `POST /api/chat`, `POST /api/chat/:agent`, `POST /api/room`, dan `GET /api/health`.
-- `server/room.js` — Zeus mengarahkan pertanyaan, memanggil paling banyak dua dewa yang aktif, lalu merangkum.
-- `server/personas.js` — persona tiap dewa. Zeus dan Demeter aktif; dewa lain tinggal diaktifkan di config ini.
-- `server/providers.js` — OpenAI dan DeepSeek, keduanya lewat API yang kompatibel dengan OpenAI.
+- `server/room.js` — Zeus mengarahkan pertanyaan, memanggil paling banyak dua dewa yang aktif, lalu merangkum. Pertanyaan onchain ikut memanggil Hades.
+- `server/personas.js` — persona tiap dewa. Zeus, Demeter, dan Hades aktif; dewa lain tinggal diaktifkan di config ini.
+- `server/chain.js` — alat baca Hades: saldo native, metadata ERC-20, transaksi, blok dan gas, serta cek kode kontrak.
+- `server/hades.js` — putaran function calling, paling banyak empat putaran alat per pesan.
+- `server/providers.js` — OpenAI dan DeepSeek, keduanya lewat API yang kompatibel dengan OpenAI, termasuk tools.
 - `src/game/ZeusWorldCharacter.jsx` — gerak Zeus di lantai pulau.
 - `src/game/IslandNpcs.jsx` — NPC yang berjalan, berhenti, dan berbalik di pulau.
 - `src/game/islandWalk.js` — batas lantai, plus penolakan kolam, lava, dan sungai bawah tanah.

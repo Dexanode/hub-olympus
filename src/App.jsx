@@ -290,6 +290,7 @@ const layoutOverrides = `
 .hub-chat-head>button{padding:6px 8px}
 .hub-log{display:flex;flex-direction:column;gap:6px;flex:1;min-height:0;overflow:auto;padding:8px}
 .hub-empty,.hub-offline p{margin:auto;color:#9aa6b8;font:8px/1.45 var(--mono);text-align:center}
+.hub-lookup{margin:0;color:#8fd9c4;font:7px/1.4 var(--mono);letter-spacing:.04em}
 .hub-bubble{display:flex;gap:6px;max-width:92%;align-items:flex-start}
 .hub-bubble.user{align-self:flex-end;flex-direction:row-reverse;text-align:right}
 .hub-bubble small{display:block;margin-bottom:2px;color:var(--accent);font:700 7px var(--mono);letter-spacing:.1em}

@@ -19,10 +19,14 @@ test('routing consults at most two gods and skips disabled ones', () => {
   assert.deepEqual(liquidity.offline.map((persona) => persona.id), ['athena']);
 
   const many = planDelegation('liquidity wallet applicant konten bug whale');
-  assert.equal(many.consult.length, 1);
-  assert.equal(many.consult[0].id, 'demeter');
+  assert.deepEqual(many.consult.map((persona) => persona.id), ['demeter', 'hades']);
   assert.equal(many.offline.length, 2);
   assert.deepEqual(many.offline.map((persona) => persona.id), ['athena', 'aphrodite']);
+
+  const hash = `0x${'ab'.repeat(32)}`;
+  const tx = planDelegation(`What is the status of ${hash}?`);
+  assert.deepEqual(tx.consult.map((persona) => persona.id), ['hades']);
+  assert.deepEqual(tx.offline, []);
 
   const capped = planDelegation('liquidity wallet bug', {
     athena: { id: 'athena', name: 'Athena', enabled: true },

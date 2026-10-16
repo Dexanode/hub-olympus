@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { appendDelta, countUnread, sanitizeHub } from './hubState.js';
+import { appendDelta, countUnread, formatLookup, sanitizeHub } from './hubState.js';
 
 test('stored threads drop empty rows and cap the length', () => {
   const long = Array.from({ length: 30 }, (_, index) => ({
@@ -34,6 +34,26 @@ test('unread counts finished replies the owner has not seen', () => {
   assert.equal(countUnread(messages, 2), 0);
   const done = messages.map((message) => ({ ...message, pending: false, content: message.content || 'done' }));
   assert.equal(countUnread(done, 2), 1);
+});
+
+test('an onchain lookup line is kept and does not count as unread', () => {
+  const hub = sanitizeHub({
+    selected: 'hades',
+    threads: {
+      hades: [
+        { role: 'user', content: 'Balance?' },
+        { role: 'lookup', lookup: { tool: 'get_native_balance', args: { chain: 'ethereum', address: `0x${'11'.repeat(20)}`, note: 'drop me' } } },
+        { role: 'assistant', speaker: 'hades', content: 'Cited.' },
+        { role: 'lookup', lookup: { tool: 'DROP ME', args: {} } },
+      ],
+    },
+    seen: { hades: 1 },
+  });
+  assert.equal(hub.threads.hades.length, 3);
+  assert.equal(hub.threads.hades[1].role, 'lookup');
+  assert.deepEqual(hub.threads.hades[1].lookup.args, { chain: 'ethereum', address: `0x${'11'.repeat(20)}` });
+  assert.equal(countUnread(hub.threads.hades, 1), 1);
+  assert.match(formatLookup(hub.threads.hades[1].lookup), /^onchain lookup · get_native_balance · chain=ethereum · address=0x/);
 });
 
 test('streaming appends to the same speaker bubble', () => {

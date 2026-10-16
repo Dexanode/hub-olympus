@@ -1,5 +1,7 @@
-import { personaFor } from './personas.js';
+import { personaFor, personas } from './personas.js';
 import { ProviderError, resolveProvider } from './providers.js';
+import { createChainClient, needsOnchain } from './chain.js';
+import { hadesEvents } from './hades.js';
 
 export const MAX_MESSAGE_CHARS = 2000;
 export const MAX_MESSAGES = 16;
@@ -67,11 +69,97 @@ export function validateChatBody(body) {
   return { persona, messages };
 }
 
-export function createChatHandler({ env = process.env, fetchImpl = fetch, allow } = {}) {
+async function* withSpeaker(speaker, events) {
+  for await (const event of events) {
+    if (event.lookup) yield { speaker, lookup: event.lookup };
+    else if (event.delta) yield { speaker, delta: event.delta };
+  }
+}
+
+async function* demeterWithHades({ persona, messages, provider, client, signal }) {
+  let hadesText = '';
+  for await (const event of hadesEvents({
+    provider,
+    system: personas.hades.system,
+    messages: [{ role: 'user', content: messages.at(-1).content }],
+    client,
+    signal,
+  })) {
+    if (event.lookup) yield { speaker: 'hades', lookup: event.lookup };
+    if (event.delta) {
+      hadesText += event.delta;
+      yield { speaker: 'hades', delta: event.delta };
+    }
+  }
+  const quoted = hadesText.trim().slice(0, 4_000);
+  const system = `${persona.system}
+
+Hades already looked up the onchain data for the owner's latest question.
+Explain his reply in your support tone. Do not add numbers, addresses, or transaction data that he did not state.
+If he had no tool result, say the lookup is unavailable and ask for the chain and the address or transaction hash.
+Hades said: ${quoted}`;
+  for await (const delta of provider.stream({ system, messages, signal })) {
+    if (delta) yield { speaker: 'demeter', delta };
+  }
+}
+
+async function* framedEvents({ persona, messages, provider, client, signal }) {
+  try {
+    if (persona.id === 'hades') {
+      yield* withSpeaker('hades', hadesEvents({
+        provider,
+        system: persona.system,
+        messages,
+        client,
+        signal,
+      }));
+    } else {
+      yield* demeterWithHades({ persona, messages, provider, client, signal });
+    }
+    yield { done: true };
+  } catch (error) {
+    yield { error: errorMessage(error) };
+  }
+}
+
+async function collectFramed(events, provider) {
+  const turns = [];
+  const lookups = [];
+  for await (const event of events) {
+    if (event.error) {
+      const status = /too long/i.test(event.error) ? 504 : 502;
+      return { status, json: { error: event.error } };
+    }
+    if (event.done) break;
+    if (event.lookup) {
+      lookups.push(event.lookup);
+      turns.push({ speaker: event.speaker || 'hades', lookup: event.lookup });
+      continue;
+    }
+    if (!event.delta) continue;
+    const last = turns.at(-1);
+    if (last?.speaker === event.speaker && typeof last.content === 'string') last.content += event.delta;
+    else turns.push({ speaker: event.speaker, content: event.delta });
+  }
+  const reply = [...turns].reverse().find((turn) => turn.content)?.content || '';
+  return {
+    status: 200,
+    json: {
+      reply,
+      turns,
+      lookups,
+      provider: provider.name,
+      model: provider.model,
+    },
+  };
+}
+
+export function createChatHandler({ env = process.env, fetchImpl = fetch, chainFetch, allow } = {}) {
   const limit = Number(env.CHAT_RATE_LIMIT || DEFAULT_LIMIT);
   const windowMs = Number(env.CHAT_RATE_WINDOW_MS || DEFAULT_WINDOW_MS);
   const timeoutMs = Number(env.CHAT_TIMEOUT_MS || DEFAULT_TIMEOUT_MS);
   const rateLimit = allow || createRateLimiter({ limit, windowMs });
+  const client = createChainClient({ env, fetchImpl: chainFetch || fetch });
 
   return async function handleChat({ body, ip, signal, now = Date.now() }) {
     if (!rateLimit(ip, now)) {
@@ -87,6 +175,19 @@ export function createChatHandler({ env = process.env, fetchImpl = fetch, allow 
 
     const timeout = AbortSignal.timeout(timeoutMs);
     const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
+    const onchain = parsed.persona.id === 'hades'
+      || (parsed.persona.id === 'demeter' && needsOnchain(parsed.messages.at(-1).content));
+    if (onchain) {
+      const events = framedEvents({
+        persona: parsed.persona,
+        messages: parsed.messages,
+        provider,
+        client,
+        signal: combined,
+      });
+      if (body.stream === false) return collectFramed(events, provider);
+      return { status: 200, framed: true, stream: events, provider: provider.name, model: provider.model };
+    }
     try {
       const stream = provider.stream({
         system: parsed.persona.system,

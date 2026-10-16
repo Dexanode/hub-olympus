@@ -126,7 +126,8 @@ const server = http.createServer(async (req, res) => {
       const result = await handleChat({ body, ip: clientIp(req), signal: clientGone.signal });
       if (result.stream) {
         writeSse(res);
-        for await (const event of guardStream(result.stream)) {
+        const frames = result.framed ? result.stream : guardStream(result.stream);
+        for await (const event of frames) {
           if (event.done) res.write('data: [DONE]\n\n');
           else res.write(`data: ${JSON.stringify(event)}\n\n`);
         }

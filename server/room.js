@@ -1,6 +1,8 @@
 import { personas, personaFor } from './personas.js';
 import { ProviderError, resolveProvider } from './providers.js';
 import { MAX_MESSAGE_CHARS, MAX_TOTAL_CHARS, createRateLimiter } from './chat.js';
+import { ONCHAIN_PHRASES, createChainClient, needsOnchain, textIncludesPhrase } from './chain.js';
+import { hadesEvents } from './hades.js';
 
 export const MAX_ROOM_MESSAGES = 24;
 export const MAX_CONSULTS = 2;
@@ -16,26 +18,29 @@ const ROUTES = [
   { id: 'aphrodite', phrases: ['applicant', 'hire', 'contributor', 'pekerjaan', 'lamaran', 'lowongan'] },
   { id: 'hera', phrases: ['content calendar', 'social post', 'konten', 'jadwal', 'tweet'] },
   { id: 'ares', phrases: ['bug', 'audit', 'bounty', 'kerentanan', 'vulnerability'] },
-  { id: 'hades', phrases: ['whale', 'on-chain', 'onchain', 'on chain'] },
+  { id: 'hades', phrases: ONCHAIN_PHRASES },
 ];
-
-function includesPhrase(text, phrase) {
-  const needle = phrase.toLowerCase();
-  if (needle.length >= 5) return text.toLowerCase().includes(needle);
-  return new RegExp(`(?:^|[^a-z0-9])${needle}(?:[^a-z0-9]|$)`, 'i').test(text);
-}
 
 export function planDelegation(text, roster = personas) {
   const consult = [];
   const offline = [];
   for (const route of ROUTES) {
-    if (!route.phrases.some((phrase) => includesPhrase(text, phrase))) continue;
+    if (!route.phrases.some((phrase) => textIncludesPhrase(text, phrase))) continue;
     const persona = roster[route.id];
     if (!persona || persona.id === 'zeus') continue;
     if (persona.enabled) {
       if (consult.length < MAX_CONSULTS) consult.push(persona);
     } else if (offline.length < MAX_CONSULTS) {
       offline.push(persona);
+    }
+  }
+  if (needsOnchain(text)) {
+    const hades = roster.hades;
+    const listed = consult.some((persona) => persona.id === 'hades')
+      || offline.some((persona) => persona.id === 'hades');
+    if (hades && !listed) {
+      if (hades.enabled && consult.length < MAX_CONSULTS) consult.push(hades);
+      else if (!hades.enabled && offline.length < MAX_CONSULTS) offline.push(hades);
     }
   }
   return { consult, offline };
@@ -125,11 +130,12 @@ function roomError(error) {
   return 'The throne room could not answer just now.';
 }
 
-export function createRoomHandler({ env = process.env, fetchImpl = fetch, allow, provider: forcedProvider } = {}) {
+export function createRoomHandler({ env = process.env, fetchImpl = fetch, chainFetch, allow, provider: forcedProvider } = {}) {
   const limit = Number(env.CHAT_RATE_LIMIT || DEFAULT_LIMIT);
   const windowMs = Number(env.CHAT_RATE_WINDOW_MS || DEFAULT_WINDOW_MS);
   const timeoutMs = Number(env.CHAT_TIMEOUT_MS || DEFAULT_TIMEOUT_MS);
   const rateLimit = allow || createRateLimiter({ limit, windowMs });
+  const client = createChainClient({ env, fetchImpl: chainFetch || fetch });
 
   return async function handleRoom({ body, ip, signal, now = Date.now() }) {
     if (!rateLimit(ip, now)) {
@@ -147,6 +153,7 @@ export function createRoomHandler({ env = process.env, fetchImpl = fetch, allow,
       decision,
       signal,
       timeoutMs,
+      client,
     });
     if (body.stream === false) {
       const turns = [];
@@ -157,9 +164,13 @@ export function createRoomHandler({ env = process.env, fetchImpl = fetch, allow,
             return { status, json: { error: event.error } };
           }
           if (event.done) break;
+          if (event.lookup) {
+            turns.push({ speaker: event.speaker, lookup: event.lookup });
+            continue;
+          }
           if (!event.delta) continue;
           const last = turns.at(-1);
-          if (last?.speaker === event.speaker) last.content += event.delta;
+          if (last?.speaker === event.speaker && typeof last.content === 'string') last.content += event.delta;
           else turns.push({ speaker: event.speaker, content: event.delta });
         }
       } catch (error) {
@@ -180,20 +191,36 @@ export function createRoomHandler({ env = process.env, fetchImpl = fetch, allow,
   };
 }
 
-async function* speakRoom({ provider, messages, decision, signal, timeoutMs }) {
+async function* speakRoom({ provider, messages, decision, signal, timeoutMs, client }) {
   const question = messages.at(-1).content;
   const consults = [];
   try {
     for (const persona of decision.consult) {
       let content = '';
-      for await (const delta of provider.stream({
-        system: persona.system,
-        messages: [{ role: 'user', content: question }],
-        signal: linkSignal(signal, timeoutMs),
-      })) {
-        if (!delta) continue;
-        content += delta;
-        yield { speaker: persona.id, delta };
+      if (persona.id === 'hades') {
+        for await (const event of hadesEvents({
+          provider,
+          system: persona.system,
+          messages: [{ role: 'user', content: question }],
+          client,
+          signal: linkSignal(signal, timeoutMs),
+        })) {
+          if (event.lookup) yield { speaker: 'hades', lookup: event.lookup };
+          if (event.delta) {
+            content += event.delta;
+            yield { speaker: 'hades', delta: event.delta };
+          }
+        }
+      } else {
+        for await (const delta of provider.stream({
+          system: persona.system,
+          messages: [{ role: 'user', content: question }],
+          signal: linkSignal(signal, timeoutMs),
+        })) {
+          if (!delta) continue;
+          content += delta;
+          yield { speaker: persona.id, delta };
+        }
       }
       if (content.trim()) consults.push({ name: persona.name, content });
     }

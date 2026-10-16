@@ -58,46 +58,130 @@ export async function* readOpenAIDeltas(response) {
   }
 }
 
+async function postCompletion({ url, apiKey, body, fetchImpl, signal }) {
+  let response;
+  try {
+    response = await fetchImpl(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+      signal,
+    });
+  } catch (error) {
+    if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
+      throw new ProviderError(504, 'The reply took too long.');
+    }
+    throw new ProviderError(502, 'The language model could not be reached.');
+  }
+  if (!response.ok) {
+    await response.text().catch(() => '');
+    throw new ProviderError(response.status >= 500 ? 502 : response.status, safeProviderMessage(response.status));
+  }
+  return response;
+}
+
 export function createCompatibleProvider({ name, apiKey, baseUrl, model, fetchImpl = fetch }) {
   const url = completionsUrl(baseUrl);
   return {
     name,
     model,
     async *stream({ system, messages, signal }) {
-      let response;
-      try {
-        response = await fetchImpl(url, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model,
-            stream: true,
-            temperature: 0.4,
-            messages: [{ role: 'system', content: system }, ...messages],
-          }),
-          signal,
-        });
-      } catch (error) {
-        if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
-          throw new ProviderError(504, 'The reply took too long.');
-        }
-        throw new ProviderError(502, 'The language model could not be reached.');
-      }
-      if (!response.ok) {
-        await response.text().catch(() => '');
-        throw new ProviderError(response.status >= 500 ? 502 : response.status, safeProviderMessage(response.status));
-      }
+      const response = await postCompletion({
+        url,
+        apiKey,
+        fetchImpl,
+        signal,
+        body: {
+          model,
+          stream: true,
+          temperature: 0.4,
+          messages: [{ role: 'system', content: system }, ...messages],
+        },
+      });
       yield* readOpenAIDeltas(response);
     },
+    async complete({ system, messages, tools, signal }) {
+      const body = {
+        model,
+        stream: false,
+        temperature: tools?.length ? 0.2 : 0.4,
+        messages: [{ role: 'system', content: system }, ...messages],
+      };
+      if (tools?.length) body.tools = tools;
+      const response = await postCompletion({ url, apiKey, body, fetchImpl, signal });
+      const text = await response.text();
+      if (text.length > 1_000_000) throw new ProviderError(502, 'The language model rejected the request.');
+      let json;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        throw new ProviderError(502, 'The language model rejected the request.');
+      }
+      if (json.error?.message) throw new ProviderError(502, safeProviderMessage(502));
+      const message = json.choices?.[0]?.message || {};
+      const toolCalls = [];
+      for (const call of (message.tool_calls || []).slice(0, 4)) {
+        const toolName = call?.function?.name;
+        if (typeof toolName !== 'string' || !toolName) continue;
+        let args = call.function?.arguments;
+        if (args && typeof args !== 'string') args = JSON.stringify(args);
+        if (typeof args === 'string' && args.length > 4_000) args = '{}';
+        toolCalls.push({
+          id: String(call.id || `call_${toolCalls.length}`),
+          name: toolName,
+          arguments: typeof args === 'string' ? args : '{}',
+        });
+      }
+      return {
+        content: typeof message.content === 'string' ? message.content : '',
+        toolCalls,
+      };
+    },
   };
+}
+
+function mockHadesCall(messages) {
+  const last = [...(messages || [])].reverse().find((message) => message.role === 'user');
+  const text = last?.content || '';
+  const chain = /\bbase\b/i.test(text) ? 'base'
+    : /\barbitrum\b|\barb\b/i.test(text) ? 'arbitrum'
+      : /\bbsc\b|\bbnb\b/i.test(text) ? 'bsc'
+        : /\bpolygon\b|\bmatic\b/i.test(text) ? 'polygon'
+          : 'ethereum';
+  const hash = text.match(/0x[a-fA-F0-9]{64}/);
+  const addresses = text.match(/0x[a-fA-F0-9]{40}/g) || [];
+  if (hash) return { id: 'call_tx', name: 'get_transaction', arguments: JSON.stringify({ chain, hash: hash[0] }) };
+  if (/\b(gas price|harga gas|block number|nomor blok)\b/i.test(text)) {
+    return { id: 'call_net', name: 'get_network', arguments: JSON.stringify({ chain }) };
+  }
+  if (addresses.length && /\b(token|erc-?20)\b/i.test(text)) {
+    const args = { chain, token: addresses[0] };
+    if (addresses[1]) args.address = addresses[1];
+    return { id: 'call_token', name: 'get_token', arguments: JSON.stringify(args) };
+  }
+  if (addresses.length && /\b(history|riwayat)\b/i.test(text)) {
+    return { id: 'call_hist', name: 'get_tx_history', arguments: JSON.stringify({ chain, address: addresses[0] }) };
+  }
+  if (addresses.length && /\b(contract|kontrak)\b/i.test(text)) {
+    return { id: 'call_code', name: 'is_contract', arguments: JSON.stringify({ chain, address: addresses[0] }) };
+  }
+  if (addresses.length) {
+    return { id: 'call_bal', name: 'get_native_balance', arguments: JSON.stringify({ chain, address: addresses[0] }) };
+  }
+  return null;
 }
 
 function mockReply(text, system = '') {
   const indonesian = /[^\u0000-\u007f]/u.test(text) || /\b(saya|aku|kamu|apa|tolong|bagaimana|yang|tidak|bantu)\b/i.test(text);
   if (/You are Demeter/.test(system)) {
+    if (/Hades said:/.test(system)) {
+      return indonesian
+        ? 'Aku Demeter. Hades sudah memeriksa data onchain di atas. Aku tidak menambah angka di luar hasil itu. Jangan kirim seed phrase atau private key.'
+        : 'I am Demeter. Hades checked the onchain data above. I will not add numbers beyond that result. Do not send a seed phrase or private key.';
+    }
     return indonesian
       ? 'Aku Demeter. Ceritakan langkah yang sudah kamu coba. Jangan kirim seed phrase atau private key.'
       : 'I am Demeter. Tell me the step you already tried. Do not send a seed phrase or private key.';
@@ -142,6 +226,24 @@ export function createMockProvider(env = {}) {
         if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
         yield part;
       }
+    },
+    async complete({ system, messages, tools }) {
+      const toolMsgs = (messages || []).filter((message) => message.role === 'tool');
+      if (/You are Hades/.test(system || '')) {
+        if (toolMsgs.length) {
+          return { content: `Cited tool result: ${toolMsgs.map((message) => message.content).join(' | ')}`, toolCalls: [] };
+        }
+        if (tools?.length) {
+          const call = mockHadesCall(messages);
+          if (call) return { content: '', toolCalls: [call] };
+        }
+        return {
+          content: 'No tool result is available. I will not invent a balance, an address, or a transaction.',
+          toolCalls: [],
+        };
+      }
+      const last = [...(messages || [])].reverse().find((message) => message.role === 'user');
+      return { content: mockReply(last?.content || '', system), toolCalls: [] };
     },
   };
 }

@@ -6,7 +6,7 @@ import aphroditeSprite from '../assets/aphrodite-pixel.png';
 import heraSprite from '../assets/hera-pixel.png';
 import aresSprite from '../assets/ares-pixel.png';
 import hadesSprite from '../assets/hades-pixel.png';
-import { ONLINE_GODS, appendDelta, countUnread, loadHub, saveHub } from './hubState.js';
+import { ONLINE_GODS, appendDelta, countUnread, formatLookup, loadHub, saveHub } from './hubState.js';
 
 const MAX_CHARS = 2000;
 const sprites = {
@@ -47,7 +47,8 @@ async function readSse(response, onEvent) {
       if (!payload || payload === '[DONE]') continue;
       const event = JSON.parse(payload);
       if (event.error) throw new Error(event.error);
-      if (event.delta) onEvent(event);
+      if (event.lookup) onEvent({ speaker: event.speaker, lookup: event.lookup });
+      if (event.delta) onEvent({ speaker: event.speaker, delta: event.delta });
     }
   }
 }
@@ -129,8 +130,11 @@ export default function OlympusHub({ agents, selectedId, onSelect, mode, onMode,
       return;
     }
     busy.current[godId] = true;
-    const history = [...(threads[godId] || []), { role: 'user', speaker: 'owner', content: text }].slice(godId === 'zeus' ? -24 : -16);
-    setThreads((current) => ({ ...current, [godId]: history }));
+    const visible = [...(threads[godId] || []), { role: 'user', speaker: 'owner', content: text }];
+    const history = visible
+      .filter((message) => message.role === 'user' || message.role === 'assistant')
+      .slice(godId === 'zeus' ? -24 : -16);
+    setThreads((current) => ({ ...current, [godId]: visible }));
     setDrafts((current) => ({ ...current, [godId]: '' }));
     setErrors((current) => ({ ...current, [godId]: '' }));
     setStatus((current) => ({ ...current, [godId]: 'sending' }));
@@ -150,15 +154,32 @@ export default function OlympusHub({ agents, selectedId, onSelect, mode, onMode,
       if (!response.ok || type.includes('application/json')) {
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.error || `The chat server returned ${response.status}.`);
-        const turns = throne
-          ? (data.turns || []).map((turn) => ({ role: 'assistant', speaker: turn.speaker, content: turn.content || '' }))
-          : [{ role: 'assistant', speaker: godId, content: data.reply || '' }];
-        setThreads((current) => ({ ...current, [godId]: [...history, ...turns.filter((turn) => turn.content)] }));
+        const turns = Array.isArray(data.turns) && data.turns.length
+          ? data.turns.map((turn) => {
+            if (turn.lookup?.tool) {
+              return { role: 'lookup', speaker: turn.speaker || 'hades', lookup: turn.lookup };
+            }
+            if (!turn.content) return null;
+            return { role: 'assistant', speaker: turn.speaker || godId, content: turn.content };
+          }).filter(Boolean)
+          : [{ role: 'assistant', speaker: godId, content: data.reply || '' }].filter((turn) => turn.content);
+        setThreads((current) => ({ ...current, [godId]: [...(current[godId] || visible), ...turns] }));
       } else {
         await readSse(response, (event) => {
+          if (event.lookup?.tool) {
+            setThreads((current) => ({
+              ...current,
+              [godId]: [...(current[godId] || visible), {
+                role: 'lookup',
+                speaker: event.speaker || 'hades',
+                lookup: event.lookup,
+              }],
+            }));
+            return;
+          }
           const speaker = event.speaker || godId;
           setThreads((current) => {
-            const result = appendDelta(current[godId] || history, speaker, event.delta);
+            const result = appendDelta(current[godId] || visible, speaker, event.delta);
             return { ...current, [godId]: result.messages };
           });
         });
@@ -178,7 +199,7 @@ export default function OlympusHub({ agents, selectedId, onSelect, mode, onMode,
       }));
       setThreads((current) => ({
         ...current,
-        [godId]: (current[godId] || []).filter((message) => message.content || message.role === 'user'),
+        [godId]: (current[godId] || []).filter((message) => message.content || message.role === 'user' || message.role === 'lookup'),
       }));
       setStatus((current) => ({ ...current, [godId]: 'error' }));
     } finally {
@@ -256,10 +277,17 @@ export default function OlympusHub({ agents, selectedId, onSelect, mode, onMode,
                     <p className="hub-empty">
                       {selected.id === 'zeus'
                         ? 'Ask Zeus. He answers, or calls a god who is online.'
-                        : `Ask ${selected.name} about a wallet, a transaction, an account, or a product.`}
+                        : selected.id === 'hades'
+                          ? 'Ask Hades for a balance, a token, a transaction, or a contract check. He cites only tool results.'
+                          : selected.id === 'demeter'
+                            ? 'Ask Demeter about a wallet, a transaction, an account, or a product. She can ask Hades for onchain data.'
+                            : `Ask ${selected.name} about a wallet, a transaction, an account, or a product.`}
                     </p>
                   )}
                   {messages.map((message, index) => {
+                    if (message.role === 'lookup') {
+                      return <p key={`lookup-${index}`} className="hub-lookup">{formatLookup(message.lookup)}</p>;
+                    }
                     const speakerId = message.speaker === 'owner' ? 'owner' : message.speaker;
                     const speaker = speakerId === 'owner'
                       ? { name: 'OWNER', color: '#f6e2a4' }
@@ -284,7 +312,7 @@ export default function OlympusHub({ agents, selectedId, onSelect, mode, onMode,
                   <input
                     value={draft}
                     maxLength={MAX_CHARS}
-                    placeholder={selected.id === 'zeus' ? 'Ask Zeus to route this…' : `Message ${selected.name}…`}
+                    placeholder={selected.id === 'zeus' ? 'Ask Zeus to route this…' : selected.id === 'hades' ? 'Ask Hades for an onchain lookup…' : `Message ${selected.name}…`}
                     aria-label={`Message ${selected.id === 'zeus' ? 'the throne room' : selected.name}`}
                     disabled={sending}
                     onChange={(event) => setDrafts((current) => ({ ...current, [selected.id]: event.target.value }))}

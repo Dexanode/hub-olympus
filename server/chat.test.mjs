@@ -63,7 +63,7 @@ test('mock provider streams deltas', async () => {
 
 test('disabled gods stay closed', async () => {
   const handle = handler({ LLM_PROVIDER: 'mock' });
-  for (const agent of ['athena', 'aphrodite', 'hera', 'ares', 'hades']) {
+  for (const agent of ['athena', 'aphrodite', 'hera', 'ares']) {
     const result = await handle({
       body: { agent, messages: [owner] },
       ip: `10.0.5.${agent.length}`,
