@@ -1,30 +1,12 @@
 import { useEffect, useRef } from 'react';
 import ZeusAgent from './ZeusAgent.jsx';
-
-const ISLAND_WALK_AREA = [
-  [160, 389], [310, 295], [495, 229], [680, 151], [874, 162], [1051, 230],
-  [1257, 245], [1424, 364], [1472, 530], [1368, 620], [1283, 728], [1151, 776],
-  [992, 757], [869, 826], [693, 810], [538, 834], [371, 771], [231, 648], [154, 522],
-];
-
-function isInsideIsland(xPercent, yPercent) {
-  const x = xPercent * 16;
-  const y = yPercent * 9;
-  let inside = false;
-  for (let i = 0, j = ISLAND_WALK_AREA.length - 1; i < ISLAND_WALK_AREA.length; j = i++) {
-    const [xi, yi] = ISLAND_WALK_AREA[i];
-    const [xj, yj] = ISLAND_WALK_AREA[j];
-    const crosses = (yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
-    if (crosses) inside = !inside;
-  }
-  return inside;
-}
+import { isInsideIsland } from './islandWalk.js';
 
 const MOVEMENT_KEYS = new Set(['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright']);
 
-export default function ZeusWorldCharacter({ frameRef, enabled = true }) {
+export default function ZeusWorldCharacter({ frameRef, enabled = true, onOpen }) {
   const characterRef = useRef(null);
-  const positionRef = useRef({ x: 50, y: 43 });
+  const positionRef = useRef({ x: 50, y: 44 });
 
   useEffect(() => {
     const frame = frameRef.current;
@@ -40,7 +22,9 @@ export default function ZeusWorldCharacter({ frameRef, enabled = true }) {
     const drawPosition = () => {
       character.style.left = `${positionRef.current.x}%`;
       character.style.top = `${positionRef.current.y}%`;
-      character.style.zIndex = String(4 + Math.round(positionRef.current.y * 10));
+      character.style.zIndex = String(Math.round(positionRef.current.y * 10));
+      const sign = character.querySelector('.god-sign');
+      if (sign) sign.dataset.side = positionRef.current.x > 68 ? 'left' : 'right';
     };
     const setMoving = (next) => {
       if (moving === next) return;
@@ -143,8 +127,12 @@ export default function ZeusWorldCharacter({ frameRef, enabled = true }) {
   }, [enabled, frameRef]);
 
   return (
-    <div ref={characterRef} className="map-zeus-character" data-direction="south" aria-label="Zeus, playable character">
-      <ZeusAgent className="zeus-world-sprite" isActive />
+    <div ref={characterRef} className="map-zeus-character" data-direction="south">
+      <span className="god-name-tag">ZEUS</span>
+      <button type="button" className="god-hit" aria-label="Zeus, Founder / Boss" onClick={onOpen}>
+        <ZeusAgent className="zeus-world-sprite" isActive />
+      </button>
+      <span className="god-sign" data-side="right">Founder / Boss</span>
     </div>
   );
 }

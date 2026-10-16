@@ -4,12 +4,15 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "vite",
+    "dev:api": "node server/index.js",
+    "start": "node server/index.js",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:chat": "node --test server/chat.test.mjs server/room.test.mjs server/chain.test.mjs server/hades.test.mjs src/game/hubState.test.mjs"
   },
   "dependencies": {
-    "phaser": "^3.90.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
