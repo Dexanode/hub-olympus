@@ -1,0 +1,1626 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PT Olympus Bahagia 🏛️</title>
+<style>
+  :root{
+    --bg:#0b1020; --panel:rgba(255,255,255,.06); --panel2:rgba(255,255,255,.09);
+    --line:rgba(255,255,255,.12); --txt:#e8ecf6; --dim:#9aa6c0; --acc:#7c5cff; --acc2:#22d3ee;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:radial-gradient(1200px 700px at 70% -10%, #1b2447 0%, var(--bg) 55%) fixed;
+    color:var(--txt); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  header{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:10px 18px;border-bottom:1px solid var(--line);background:rgba(10,14,30,.6);backdrop-filter:blur(8px);
+  }
+  .logo{font-size:19px;letter-spacing:.3px;white-space:nowrap}
+  .logo b{background:linear-gradient(90deg,#d4af37,#f5d67b);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .clockwrap{text-align:center;line-height:1.1}
+  #clock{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+  #day{font-size:11px;color:var(--dim)}
+  .hdr-right{display:flex;align-items:center;gap:8px}
+  .chip{font-size:12px;color:var(--dim);border:1px solid var(--line);border-radius:99px;padding:4px 10px;white-space:nowrap}
+  .spd{width:34px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--txt);cursor:pointer;font-size:13px}
+  .spd.on{background:linear-gradient(90deg,var(--acc),#5b8cff);border-color:transparent}
+  #btnAssembly{width:auto;padding:0 12px;font-size:12px;background:linear-gradient(90deg,#b8860b,#d4af37);border:none;font-weight:700}
+  #btnBrain{width:auto;padding:0 10px;font-size:12px}
+  #btnBrain.on{background:linear-gradient(90deg,#10b981,#22d3ee);border:none}
+  .modal{position:fixed;inset:0;background:rgba(5,7,15,.82);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:60}
+  .modal.on{display:flex}
+  .mcard{width:min(440px,92vw);background:linear-gradient(180deg,rgba(30,38,72,.97),rgba(16,20,40,.97));border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+  .mcard h2{font-size:18px;margin-bottom:4px}
+  .mcard .sub{color:var(--dim);font-size:12px;line-height:1.5;margin-bottom:14px}
+  .mcard label{display:block;font-size:12px;color:var(--dim);margin:10px 0 4px}
+  .mcard select,.mcard input{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;color:var(--txt);padding:9px 12px;font-size:13px;outline:none}
+  .mcard select:focus,.mcard input:focus{border-color:var(--acc)}
+  .mcard .row{display:flex;gap:8px;margin-top:16px}
+  .mcard .row button{flex:1;padding:10px;border-radius:10px;border:none;font-size:13px;font-weight:700;cursor:pointer}
+  #brainSave{background:linear-gradient(90deg,var(--acc),#5b8cff);color:#fff}
+  #brainTest{background:var(--panel2);color:var(--txt);border:1px solid var(--line)!important}
+  #brainClose{background:transparent;color:var(--dim)}
+  .switch{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px}
+  .switch label{margin:0;color:var(--txt)}
+  #brainStatus{font-size:12px;margin-top:10px;min-height:16px;line-height:1.5}
+  #toasts{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;z-index:30;pointer-events:none;align-items:center}
+  .toast{background:rgba(15,20,40,.92);border:1px solid rgba(212,175,55,.45);color:#f0e6c8;font-size:13px;padding:8px 16px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:pop .25s ease;white-space:nowrap}
+  .chat-actions{display:flex;gap:8px;padding:8px 10px 0}
+  .chat-actions button{flex:1;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--txt);cursor:pointer;font-size:12.5px}
+  .chat-actions button:hover{background:var(--panel2)}
+  main{flex:1;display:flex;min-height:0}
+  .stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;min-width:0;padding:8px}
+  canvas{max-width:100%;max-height:100%;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.5);cursor:pointer}
+  #hint{
+    position:absolute;left:50%;bottom:8px;transform:translateX(-50%);
+    font-size:12px;color:var(--dim);background:rgba(8,10,22,.7);border:1px solid var(--line);
+    padding:6px 14px;border-radius:99px;white-space:nowrap;backdrop-filter:blur(6px);
+  }
+  #hint b{color:var(--txt)}
+  aside#panel{
+    width:340px;flex:none;border-left:1px solid var(--line);background:rgba(10,14,30,.55);
+    display:flex;flex-direction:column;min-height:0;backdrop-filter:blur(8px);
+  }
+  nav{display:flex;gap:6px;padding:10px 10px 0}
+  .tab{flex:1;padding:8px 4px;border-radius:10px 10px 0 0;border:1px solid var(--line);border-bottom:none;background:transparent;color:var(--dim);cursor:pointer;font-size:12.5px}
+  .tab.on{background:var(--panel2);color:var(--txt)}
+  .view{flex:1;min-height:0;display:none;flex-direction:column;border-top:1px solid var(--line)}
+  .view.on{display:flex}
+  #feed{overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+  .fi{font-size:12.5px;line-height:1.45;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px;animation:pop .25s ease}
+  .fi .t{color:var(--dim);font-variant-numeric:tabular-nums;margin-right:6px;font-size:11px}
+  @keyframes pop{from{opacity:0;transform:translateY(-4px)}to{opacity:1}}
+  #team{overflow-y:auto;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start}
+  .tcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;cursor:pointer;transition:.15s}
+  .tcard:hover{background:var(--panel2);transform:translateY(-1px)}
+  .tcard .av{font-size:26px}
+  .tcard .nm{font-weight:600;font-size:13px;margin-top:4px}
+  .tcard .rl{font-size:11px;color:var(--dim)}
+  .tcard .st{font-size:11px;margin-top:5px;color:#8ef0b1}
+  #tasks{overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+  .trow{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px}
+  .trow .th{display:flex;align-items:center;gap:8px}
+  .trow .th .av{font-size:22px}
+  .trow .nm{font-weight:700;font-size:13px}
+  .trow .rl{font-size:11px;color:var(--dim)}
+  .pbar{height:6px;border-radius:99px;background:rgba(255,255,255,.1);margin:8px 0 6px;overflow:hidden}
+  .pbar>div{height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .5s}
+  .trow .ct{font-size:11.5px;color:var(--dim);line-height:1.45}
+  .trow .ct b{color:var(--txt)}
+  .trow form{display:flex;gap:6px;margin-top:8px}
+  .trow input{flex:1;min-width:0;background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:8px;color:var(--txt);padding:7px 10px;font-size:12px;outline:none}
+  .trow input:focus{border-color:var(--acc)}
+  .trow button{border:none;border-radius:8px;background:linear-gradient(90deg,var(--acc),#5b8cff);color:#fff;padding:7px 11px;font-size:12px;cursor:pointer;white-space:nowrap}
+  .chat-head{display:flex;align-items:center;gap:10px;padding:12px;border-bottom:1px solid var(--line)}
+  .chat-head .avatar{font-size:26px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+  #chatBack{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--txt);cursor:pointer}
+  #chatName{font-weight:700;font-size:14px}
+  #chatStatus{font-size:11px;color:var(--dim)}
+  #msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+  .m{max-width:82%;padding:8px 11px;border-radius:14px;font-size:13px;line-height:1.45;white-space:pre-wrap}
+  .m.me{align-self:flex-end;background:linear-gradient(135deg,var(--acc),#5b8cff);border-bottom-right-radius:4px}
+  .m.them{align-self:flex-start;background:var(--panel2);border:1px solid var(--line);border-bottom-left-radius:4px}
+  .m.sys{align-self:center;font-size:11px;color:var(--dim);background:none;padding:2px}
+  .chat-input{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}
+  #chatInput{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;color:var(--txt);padding:9px 12px;font-size:13px;outline:none}
+  #chatInput:focus{border-color:var(--acc)}
+  #chatSend{width:40px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--acc),#5b8cff);color:#fff;cursor:pointer;font-size:15px}
+  #fade{position:fixed;inset:0;background:#05070f;opacity:0;pointer-events:none;transition:opacity .6s;z-index:40}
+  #fade.on{opacity:1}
+  #start{position:fixed;inset:0;background:rgba(5,7,15,.82);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;z-index:50}
+  #start .card{width:min(460px,92vw);background:linear-gradient(180deg,rgba(30,38,72,.95),rgba(16,20,40,.95));border:1px solid var(--line);border-radius:20px;padding:30px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+  #start h1{font-size:24px;margin-bottom:10px}
+  #start h1 b{background:linear-gradient(90deg,#d4af37,#f5d67b);-webkit-background-clip:text;background-clip:text;color:transparent}
+  #start p{color:var(--dim);font-size:13.5px;line-height:1.6;margin-bottom:20px}
+  #enter{width:100%;padding:12px;border-radius:12px;border:none;font-size:15px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(90deg,var(--acc),#5b8cff)}
+  #enter:hover{filter:brightness(1.1)}
+  ::-webkit-scrollbar{width:8px}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:99px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🏛️ PT <b>Olympus</b> Bahagia</div>
+  <div class="clockwrap"><div id="clock">09:00</div><div id="day">Hari 1 • Senin</div></div>
+  <div class="hdr-right">
+    <span class="chip" id="online">🟢 6 online</span>
+    <button id="btnBrain" class="spd" title="Sambungkan LLM (AI beneran)">🧠 AI</button>
+    <button id="btnAssembly" class="spd" title="Panggil semua agent lapor status">🏛️ Assembly</button>
+    <button class="spd" data-s="0" title="Jeda">⏸</button>
+    <button class="spd on" data-s="1" title="Normal">▶</button>
+    <button class="spd" data-s="2.5" title="Cepat">⏩</button>
+  </div>
+</header>
+
+<main>
+  <div class="stage">
+<canvas id="world" width="1280" height="720"></canvas>
+    <div id="toasts"></div>
+    <div id="hint">🏛️ Prototipe map Olympus &nbsp;•&nbsp; Setiap singgasana menandai wilayah seorang dewa</div>
+  </div>
+
+  <aside id="panel">
+    <nav>
+      <button class="tab on" id="tabFeed">📢 Feed</button>
+      <button class="tab" id="tabTeam">👥 Tim</button>
+      <button class="tab" id="tabTasks">📋 Tugas</button>
+    </nav>
+    <div class="view on" id="viewFeed"><div id="feed"></div></div>
+    <div class="view" id="viewTeam"><div id="team"></div></div>
+    <div class="view" id="viewTasks"><div id="tasks"></div></div>
+    <div class="view" id="viewChat">
+      <div class="chat-head">
+        <button id="chatBack">←</button>
+        <div class="avatar" id="chatAvatar">🙂</div>
+        <div style="min-width:0">
+          <div id="chatName">Nama</div>
+          <div id="chatStatus">status</div>
+        </div>
+      </div>
+      <div id="msgs"></div>
+      <div class="chat-actions">
+        <button id="actPraise">👏 Pujian</button>
+        <button id="actCoffee">☕ Traktir Kopi</button>
+        <button id="actReport">📢 Minta Lapor</button>
+      </div>
+      <div class="chat-input">
+        <input id="chatInput" placeholder="Ketik pesan… (Enter)" autocomplete="off" maxlength="120">
+        <button id="chatSend">➤</button>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<div id="fade"></div>
+
+<div class="modal" id="brainModal">
+  <div class="mcard">
+    <h2>🧠 Sambungkan LLM</h2>
+    <div class="sub">Biara agent jawab chat pakai AI beneran (tetap dengan kepribadian &amp; status tugas live-nya). API key disimpan <b>hanya di browser ini</b>. Kalau error/mati → otomatis fallback ke otak template, game tetap jalan.</div>
+    <label>Provider</label>
+    <select id="llmProv">
+      <option value="gemini">Google Gemini (ada free tier)</option>
+      <option value="zai">Z.ai / GLM — glm-4-flash gratis</option>
+      <option value="openai">OpenAI</option>
+      <option value="openrouter">OpenRouter (ada model gratis)</option>
+      <option value="ollama">Ollama (lokal, gratis, tanpa key)</option>
+    </select>
+    <label>Model</label>
+    <input id="llmModel" placeholder="misal: gemini-2.5-flash">
+    <label>API Key</label>
+    <input id="llmKey" type="password" placeholder="tempel API key di sini (Ollama: kosongin)">
+    <div class="switch"><input type="checkbox" id="llmOn"><label for="llmOn">Aktifkan LLM untuk chat agent</label></div>
+    <div id="llmHint" style="font-size:11px;color:var(--dim);margin-top:10px;line-height:1.5"></div>
+    <div id="brainStatus"></div>
+    <div class="row">
+      <button id="brainTest">⚡ Tes</button>
+      <button id="brainSave">Simpan</button>
+      <button id="brainClose">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<div id="start">
+  <div class="card">
+    <h1>⚡ PT <b>Olympus</b> Bahagia</h1>
+    <p>Selamat datang di Olympus. Kamu adalah <b>Zeus</b>, Founder dan pemimpin para dewa. Jelajahi pulau, singgasanakan para dewa, dan pimpin dunia Web3 dari puncak Olympus.</p>
+    <button id="enter">Masuk Olympus →</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   PT OLYMPUS BAHAGIA — Olympus Web3 World
+   Kantor virtual dengan 6 agent dewa-dewa Web3
+   ============================================================ */
+
+// ---------- Konstanta dunia ----------
+const MAP_W = 24, MAP_H = 18;
+const TW = 56, TH = 28, HW = TW/2, HH = TH/2;   // tile iso
+const OX = 640, OY = 64, WALL_H = 46;
+const GOLD = '#d4af37';
+const X = (x,y)=>(x-y)*HW + OX;
+const Y = (x,y)=>(x+y)*HH + OY;
+
+const cv = document.getElementById('world');
+let c  = cv.getContext('2d');
+// Render di resolusi rendah lalu diperbesar dengan nearest-neighbor untuk nuansa 8-bit.
+const PIXEL_SCALE = 3;
+const pixelCanvas = document.createElement('canvas');
+pixelCanvas.width = Math.ceil(cv.width / PIXEL_SCALE);
+pixelCanvas.height = Math.ceil(cv.height / PIXEL_SCALE);
+const pc = pixelCanvas.getContext('2d');
+pc.imageSmoothingEnabled = false;
+c.imageSmoothingEnabled = false;
+
+// ---------- Peta: zona, furniture, blocking ----------
+const blocked = new Set();
+const bk = (x,y)=>blocked.add(y*MAP_W+x);
+function walk(x,y){
+  if(x===11 && y===17) return !blocked.has(y*MAP_W+x); // pintu masuk
+  if(x<1||y<1||x>MAP_W-2||y>MAP_H-2) return false;
+  return !blocked.has(y*MAP_W+x) && islandTile(x,y);
+}
+
+function islandTile(x,y){
+  const nx=(x-11.5)/11.5, ny=(y-8.5)/8.5;
+  return nx*nx+ny*ny<0.88;
+}
+
+const DESKS = [[2,8],[6,8],[10,8],[2,11],[6,11],[10,11]];
+DESKS.forEach(([dx,dy])=>{ bk(dx,dy); bk(dx+1,dy); });
+
+// pantry (ambrosia bar)
+for(let x=1;x<=4;x++) bk(x,1);          // meja counter marmer
+bk(3,3);                                 // meja bundar
+// ruang assembly: kolom marmer (pintu tetap di y=3)
+for(let y=1;y<=6;y++) if(y!==3) bk(14,y);
+for(let x=17;x<=19;x++){ bk(x,2); bk(x,3); } // meja assembly
+// node server, amphora, kolom pintu masuk
+bk(13,2); bk(1,5); bk(1,12); bk(22,7); bk(22,16); bk(16,16); bk(13,10); bk(10,16); bk(12,16);
+// lounge zaitun
+bk(17,16); bk(18,16); bk(19,16);         // sofa linen
+bk(19,14);                                // meja kayu
+
+const PANTRY_SPOTS  = [[1,2],[2,2],[3,2],[4,2],[5,2],[2,3],[4,3],[5,3],[2,4],[3,4],[4,4]];
+const LOUNGE_SPOTS  = [[18,13],[19,13],[20,13],[18,14],[20,14],[18,15],[19,15],[20,15],[21,15],[17,13]];
+const MEETING_SPOTS = [[18,1],[16,2],[16,3],[20,2],[20,3],[18,4]];
+const CHAT_SPOTS    = [[2,4],[4,4],[3,4],[18,14],[20,13],[19,15],[9,15],[11,14],[12,14],[8,12]];
+const DOOR = [11,17];
+
+// ---------- Data agent ----------
+// Semua tugas datang dari bos — agent NGGAK ngasih kerjaan sendiri.
+const WORK_BUBBLES = {
+  'Customer Support':[`User kemarin senang semua~ 🌾`,`Tiket withdraw selesai cepat.`,`"Kok gas fee saya mahal?" — lagi-lagi 😅`,`Sabar… kayak menanam padi.`],
+  'Onchain Analyst':[`Whale lagi akumulasi… catet. 🐋`,`Explorer nggak pernah bohong.`,`Flow masuk exchange naik dikit.`,`Block demi block, gue awasi.`],
+  'Content Creator':[`Hook-nya kurang nendang… ganti. 👑`,`Draft ke-12, reposting kemarin.`,`Engagement naik, syukur~`,`Konten edukasi > konten FUD.`],
+  'Liquidity Provider':[`IL masih kecil, aman. 🦉`,`APR 412%? Itu red flag…`,`Rebalancing dulu sebelum volatile.`,`Data dulu, feeling belakangan.`],
+  'Bug hunting':[`Aha! Input nggak ke-sanitize. ⚔️`,`Recon dulu, serang belakangan.`,`Patched. Next target.`,`Trust no input.`],
+  'Web3 jobs':[`Kandidat ini jodoh sama kita~ 💘`,`Job desc-nya gue poles lagi ya.`,`Portofolio kandidat: wow.`,`Culture fit dicek dulu sayang…`]
+};
+
+const DEFS = [
+  {id:'demeter', name:'Demeter', role:'Customer Support', emoji:'🌾', color:'#65a30d', bio:'Perhatian, sabar, nggak pernah marah — walau user marah duluan.',
+   p:{greet:[`Halo~ ada yang bisa gue bantu? 🌾`,`Hai! Semua user hari ini bahagia, syukur deh.`],
+      whoami:[`Demeter, Customer Support. Gue rawat user kayak rawat tanaman — sabar dan rutin disiram.`],
+      bos:[`Bos? Kamu donk. Kantor ini bahagia selalu karena kamu 😌`],
+      kopi:[`Kopi + teh chamomile buat user yang kesel. Ampuh tuh.`],
+      deadline:[`SLA tiket 24 jam. Gue panen sebelum waktunya 🌾`],
+      capek:[`Dihadapi user marah tiap hari itu makan hati… tapi akar gue kuat 🌱`],
+      gaji:[`Gaji? Kasih bibit tanaman udah bikin senang… eh, serius uang ya 😅`],
+      fallback:[`User dulu, gue belakangan.`,`Sabar ya, kayak menanam padi 🌾`,`Tiket kemarin bersih semua~`,`Nanti gue follow up satu-satu ya.`]}},
+  {id:'hades', name:'Hades', role:'Onchain Analyst', emoji:'🪦', color:'#64748b', bio:'Diam, tegas, hidup di block explorer.',
+   p:{greet:[`Yo. Chain sepi, arwah tenang.`,`Halo. Lagi ngintip pergerakan whale.`],
+      whoami:[`Hades, Onchain Analyst. Gue hidup di bawah sana… maksud gue di block explorer.`],
+      bos:[`Bos baik. Selama gaji nggak turun ke underworld.`],
+      kopi:[`Kopi hitam pekat. Kayak block nomor nol.`],
+      deadline:[`Market nggak nunggu deadline. Gas.`],
+      capek:[`Track wallet 24/7? Kebiasaan. Dunia bawah nggak pernah tidur.`],
+      gaji:[`Gaji? Kirim on-chain aja biar transparan 😏`],
+      fallback:[`Cek explorer dulu sebelum percaya.`,`On-chain nggak pernah bohong.`,`Whale lagi akumulasi. Catet.`,`Dunia atas terlalu ramai buat gue.`]}},
+  {id:'hera', name:'Hera', role:'Content Creator', emoji:'👑', color:'#a855f7', bio:'Ratu konten. Engagement tunduk pada dirinya.',
+   p:{greet:[`Halo! Konten hari ini naik, rasa menang~ 👑`,`Hai! Lagi cari hook buat video berikutnya.`],
+      whoami:[`Hera, Content Creator. Ratu konten — engagement tunduk pada gue.`],
+      bos:[`Bos ngerti konten atau ngikut tren doang? Jawab jujur 😏`],
+      kopi:[`Es kopi susu. Estetik buat konten, enak buat kadar.`],
+      deadline:[`Konten viral nggak kenal deadline… tapi posting jam 7 malam ya.`],
+      capek:[`Bikin 12 draft ditolak 10? Biasa. Ratu nggak menyerah.`],
+      gaji:[`Gaji plus bonus per konten FYP. Deal?`],
+      fallback:[`Itu bisa jadi konten seru~`,`Hook-nya kurang nendang, gue rapikan.`,`Story dulu biar mysterious ✨`,`Engagement naik kemarin, syukur.`]}},
+  {id:'athena', name:'Athena', role:'Liquidity Provider', emoji:'🦉', color:'#2563eb', bio:'Strategis, tenang, nggak pernah gambling.',
+   p:{greet:[`Halo. Strategi hari ini terukur.`,`Yo! Posisi aman, IL kecil.`],
+      whoami:[`Athena, Liquidity Provider. Gue ngatur strategi — bukan gambling.`],
+      bos:[`Bos percaya sama riset gue. Keputusan yang bijak.`],
+      kopi:[`Kopi panas, dua shot. Rotasi posisi butuh fokus.`],
+      deadline:[`Rebalancing sebelum volatility naik. Nggak bisa nunggu.`],
+      capek:[`Mikirin impermanent loss seharian itu… latihan mental.`],
+      gaji:[`Bonus dari yield aja udah… eh, gaji tetap dibayar kan? 😅`],
+      fallback:[`Data dulu, keputusan belakangan.`,`Risk management is king. 🦉`,`APR tinggi banget = red flag. Catet.`,`Hedge dulu, sultan belakangan.`]}},
+  {id:'ares', name:'Ares', role:'Bug hunting', emoji:'⚔️', color:'#dc2626', bio:'Agresif, langsung ke target, nggak kenal ampun sama exploit.',
+   p:{greet:[`YO! Ada bug? Lempar ke gue. ⚔️`,`Halo. Tadi pagi gue bounty lagi.`],
+      whoami:[`Ares, Bug Hunter. Gue perang sama exploit tiap hari — dan gue menang.`],
+      bos:[`Bos? Komandan tertinggi! Perintah apa hari ini? ⚔️`],
+      kopi:[`Kopi? Gue minum adrenalin.`],
+      deadline:[`Deadline? Perang nggak ada jadwal!`],
+      capek:[`CAPEK? Nggak ada kata capek di kamus ksatria… *(menguap)*`],
+      gaji:[`Dibayar per bug? Gue bakal jadi terkaya di Olympus.`],
+      fallback:[`Bug-nya mana? Gue bedah. ⚔️`,`Recon dulu, serang belakangan.`,`Patched. Next target.`,`Trust no input. Sanitize semuanya.`]}},
+  {id:'aphrodite', name:'Aphrodite', role:'Web3 jobs', emoji:'💌', color:'#ec4899', bio:'Charm level dewi. Jodoh-in kandidat bagus sama projek bagus.',
+   p:{greet:[`Hai sayang~ lagi cari kandidat atau cari jodoh? 😄`,`Hallo! Rekrutmen hari ini lancar ya~ 💘`],
+      whoami:[`Aphrodite, dari divisi Web3 Jobs. Gue jodoh-in kandidat bagus sama projek bagus 💘`],
+      bos:[`Bos itu… paling mempesona di loft ini 😘 (jangan lupa bonus)`],
+      kopi:[`Matcha latte. Hijau kayak hati yang masih hope~`],
+      deadline:[`Kandidat bagus cepet diambil orang lain. Move cepat!`],
+      capek:[`Nolak kandidat itu bikin hati remuk… tapi gue tetap sopan.`],
+      gaji:[`Gue kerja demi cinta… dan uang. Dua-duanya ya sayang 💅`],
+      fallback:[`Kandidat itu menjanjikan~ 💘`,`Job desc-nya gue poles dulu ya.`,`Culture fit itu penting, sayang.`,`Portofolio-nya wow banget!`]}}
+];
+
+const BASE_P = {
+  greet:[`Halo! Ada apa?`,`Hei! Kabar baik?`],
+  whoami:[`Aku dari tim ini juga kok 😄`],
+  bos:[`Bos? Kamu donk bosnya di kantor ini 😄`],
+  kopi:[`Ngopi dulu, gaskeun.`],
+  deadline:[`Deadline itu bikin hidup berwarna… warna merah.`],
+  capek:[`Sedikit lelah, tapi harus jalan terus.`],
+  gaji:[`Duh, itu pertanyaan berat 😅`],
+  meeting:[`Assembly tuh ibadah… eh ibadah apa ya.`],
+  makan:[`Makan di pantry atau delivery ya?`],
+  break:[`Sebentar ya, mini break dulu 😌`,`Oke, stretching 5 menit!`],
+  puji:[`Aww makasih! 🙏`,`Hehe, jago dong 😄`],
+  fallback:[`Hmm, menarik!`,`Oke oke, noted!`,`Bener juga ya…`,`Haha iya sih 😄`]
+};
+// variasi tambahan biar nggak bunyi seperti broken record
+const EXTRA_FALLBACK=[
+  `Hmm, cerita lebih detail dong? Gue penasaran 🤔`,
+  `Oke, gue catat nih 📝`,
+  `Wkwk, kocak sih itu 😂`,
+  `Serius? Jelasin dong!`,
+  `Gue setuju banget tuh 👍`,
+  `Itu ide gede. Udah kasih tau bos belum?`,
+  `Hmm… nanya Athena kale ya, dia paling pinter mikir di sini 🦉`,
+  `Wah, wah. Terus gimana ceritanya? 👀`,
+  `Boleh tuh. Detail rencananya gimana?`,
+  `Gue simpen dulu infonya, siapa tau kepake nanti 🧠`,
+  `Eh iya?! Kok bisa segitu?`,
+  `Kalau gitu harus discuss di assembly nih.`
+];
+const URL_POOL=[
+  `Wah, gue nggak bisa buka link dari kantor ini 😅 Copy-paste poin pentingnya aja, nanti gue olah.`,
+  `Link-nya nggak kebaca di sini. Kasih tau dong isinya soal apa?`,
+  `Kantor kita (belum) punya internet beneran 😂 Tulis poin-poinnya aja ya, nanti gue susun.`
+];
+// pilih balasan tanpa mengulang yang baru dipakai (extra=true → boleh dicampur fallback generik)
+function pickReply(a,pool,extra){
+  const all=extra?(pool||[]).concat(EXTRA_FALLBACK):(pool||[]);
+  const fresh=all.filter(s=>!(a.lastReplies||[]).includes(s));
+  const chosen=rnd(fresh.length?fresh:all);
+  a.lastReplies=(a.lastReplies||[]).concat(chosen).slice(-8);
+  return chosen;
+}
+// ekstrak topik dari pesan user
+const STOPWORDS=new Set(['gua','gue','aku','mau','bikin','buatin','buatkan','bikinin','konten','kontentnya','content','post','posting','thread','caption','di','x','twitter','nih','tuh','dong','yah','ya','deh','about','tentang','buat','ke','yang','ini','itu','dan','atau','sih','kak','bang','bos','lu','loe','kamu','nya','dengan','lagi','baru','please','plis','tolong','hasil','hasilnya','story','apa','mana','gimana','udah']);
+function topicFrom(text){
+  const s=text.toLowerCase().replace(/https?:\/\/\S+/g,'');
+  const m=s.match(/tentang\s+([^.!?,\n]+)/);
+  const words=(m?m[1]:s).split(/[^a-z0-9]+/).filter(Boolean);
+  const keep=words.filter(w=>!STOPWORDS.has(w));
+  return keep.length?keep.slice(0,3).join(' '):'ini';
+}
+// ekstrak teks tugas dari permintaan user
+function taskFrom(text){
+  const drop=new Set(['eh','oi','yo','halo','hai','lu','loe','kamu','kak','bang','bos','gua','gue','aku','mint','minta','tolong','coba','please','plis','bikin','buatin','buatkan','bikinin','kerjain','selesaikan','susun','rapikan','carikan','cari','dong','yah','ya','deh','nih']);
+  const words=text.trim().split(/\s+/).map(w=>w.toLowerCase());
+  while(words.length&&drop.has(words[0].replace(/[^a-z]/g,''))) words.shift();
+  const tail=new Set(['ya','yah','dong','deh','nih','tuh','kak','bang','bos','aja','saja']);
+  while(words.length>1&&tail.has(words[words.length-1].replace(/[^a-z]/g,''))) words.pop();
+  let s=words.join(' ').replace(/[.!?]+$/,'').trim();
+  if(!s) s=text.trim();
+  return s.charAt(0).toUpperCase()+s.slice(1).slice(0,80);
+}
+// generator draft konten sederhana (otak template, tanpa LLM)
+function generateContent(topic){
+  const hooks=[
+    `Kenapa ${topic} itu lebih penting dari yang kamu kira 🧵`,
+    `${topic}: hal yang nggak pernah ada yang jelasin ke kamu`,
+    `Gue coba ${topic} dan hasilnya bikin kaget 😳`,
+    `Stop scroll dulu — soal ${topic} ini wajib kamu paham 👇`,
+    `3 hal tentang ${topic} yang bakal mengubah cara pandang kamu`
+  ];
+  const bodies=[
+    `Dulu gue kira ${topic} itu ribet dan cuma buat expert. Ternyata kalau tau caranya, semuanya sederhana.\n\n1. Mulai dari yang paling kecil dulu\n2. Konsisten > sempurna\n3. Dokumentasiin perjalanan kamu — itu konten juga!`,
+    `Banyak orang salah paham soal ${topic}. Padahal ini bisa jadi game-changer kalau dipakai bener.\n\nPoinnya:\n• Mulai pelan, pahami dulu basic-nya\n• Jangan FOMO ikut semua tren\n• Bangun rutinitas yang sustainable`,
+    `Gue sempet skeptis soal ${topic}. Tapi setelah nyoba sendiri… kok kepental ya 😅 Ini yang gue pelajari:\n\n• Persiapan itu 80% dari hasil\n• Tools bagus nggak menang dari habit konsisten\n• Komunitas itu superpower`
+  ];
+  const ctas=[
+    `Save dulu biar nggak hilang 🔖`,
+    `RT kalau bermanfaat buat kamu 🔄`,
+    `Komen "GAS" kalau mau thread lanjutannya 👇`,
+    `Share ke temen kamu yang butuh ini 📤`
+  ];
+  const tags=['#Web3','#Crypto','#BuildInPublic','#TechTwitter','#LearnInPublic'];
+  const tagPick=tags.sort(()=>Math.random()-.5).slice(0,3).join(' ');
+  return `${rnd(hooks)}\n\n${rnd(bodies)}\n\n${rnd(ctas)}\n\n${tagPick}\n\nGimana, mau versi yang lebih santai atau lebih formal? 👑`;
+}
+
+// ---------- A* pathfinding ----------
+function findPath(sx,sy,tx,ty){
+  if(sx===tx&&sy===ty) return [];
+  if(!walk(tx,ty)||!walk(sx,sy)) return null;
+  const key=(x,y)=>y*MAP_W+x;
+  const g=new Map([[key(sx,sy),0]]);
+  const f=new Map([[key(sx,sy),Math.abs(tx-sx)+Math.abs(ty-sy)]]);
+  const came=new Map();
+  const open=new Set([key(sx,sy)]);
+  const DIR=[[1,0,1],[-1,0,1],[0,1,1],[0,-1,1],[1,1,1.42],[1,-1,1.42],[-1,1,1.42],[-1,-1,1.42]];
+  while(open.size){
+    let bk=null,bv=Infinity;
+    for(const k of open){const v=f.has(k)?f.get(k):Infinity; if(v<bv){bv=v;bk=k;}}
+    open.delete(bk);
+    const cx=bk%MAP_W, cy=(bk-cx)/MAP_W;
+    if(cx===tx&&cy===ty){
+      const path=[]; let k=bk;
+      while(k!==undefined){path.push({x:(k%MAP_W)+0.5,y:(((k-(k%MAP_W))/MAP_W))+0.5}); k=came.get(k);}
+      path.reverse(); path.shift(); return path;
+    }
+    const gc=g.get(bk);
+    for(const[dx,dy,cost]of DIR){
+      const nx=cx+dx, ny=cy+dy;
+      if(!walk(nx,ny)) continue;
+      if(dx&&dy&&(!walk(cx+dx,cy)||!walk(cx,cy+dy))) continue; // no corner cut
+      const nk=key(nx,ny), ng=gc+cost;
+      if(!g.has(nk)||ng<g.get(nk)){
+        g.set(nk,ng); came.set(nk,bk); f.set(nk,ng+Math.hypot(tx-nx,ty-ny));
+        open.add(nk);
+      }
+    }
+  }
+  return null;
+}
+
+// ---------- Agent runtime ----------
+const rnd=(a)=>a[Math.floor(Math.random()*a.length)];
+const rndf=(a,b)=>a+Math.random()*(b-a);
+
+const agents = DEFS.map((d,i)=>({
+  ...d, p:Object.assign({},BASE_P,d.p),
+  i, desk:DESKS[i], deskSpot:{x:DESKS[i][0]+0.5, y:DESKS[i][1]+1.5},
+  fx:DOOR[0]+0.5, fy:DOOR[1]+0.5,
+  path:[], state:'toDesk', next:'WORKING',
+  spd:1.55*rndf(.9,1.15), rate:rndf(2.2,3.4), // %task / detik
+  task:'', taskPct:0, mile:0, askCd:rndf(15,50), lastReplies:[], lastContent:null, chatHist:[],
+  energy:rndf(75,95),
+  stayT:0, chatCd:rndf(5,30), greetCd:0, wanderCd:rndf(20,60),
+  bubble:null, phase:Math.random()*10, arrived:false, partner:null
+}));
+function newTask(){} // tidak dipakai lagi — semua tugas dari bos
+agents.forEach(a=>goDesk(a));
+
+function goTo(a,tx,ty,next){
+  const sx=Math.min(MAP_W-1,Math.max(0,Math.floor(a.fx)));
+  const sy=Math.min(MAP_H-1,Math.max(0,Math.floor(a.fy)));
+  let p=findPath(sx,sy,tx,ty);
+  if(p===null){ a.state=next==='HIDDEN'?'HIDDEN':'WORKING'; return; }
+  a.path=p; a.next=next; a.arrived=false;
+  a.state = next==='WORKING' ? 'toDesk' : 'to'+next.charAt(0)+next.slice(1).toLowerCase();
+}
+function goDesk(a){ goTo(a,Math.floor(a.deskSpot.x),Math.floor(a.deskSpot.y),'WORKING'); }
+function showBubble(a,text,dur){ a.bubble={text,until:performance.now()+dur*1000}; }
+
+// Kasih tugas dari bos (panel 📋 Tugas atau lewat chat)
+function assignTask(a,text){
+  text=(text||'').trim(); if(!text) return;
+  a.task=text.charAt(0).toUpperCase()+text.slice(1).slice(0,80);
+  a.taskPct=0; a.mile=0;
+  a.rate=rndf(1.2,2.0);
+  showBubble(a,'Siap bos! Langsung gue kerjakan 💪',3);
+  log('work',`📥 <b>${esc(a.name)}</b> (${a.role}) dikasih tugas: <b>${esc(a.task)}</b>`);
+  toast(`📌 ${a.emoji} ${esc(a.name)} mulai: ${esc(a.task)}`);
+  if(a.state!=='HIDDEN'&&a.state!=='MEETING'&&!a.state.startsWith('toMeeting')) goDesk(a);
+}
+// minta agent lapor progress
+function reportNow(a){
+  if(a.state==='HIDDEN') return;
+  if(!a.task){
+    showBubble(a,'Bos, gue nggak ada tugas nih 🙋 Kasih dong!',3.5);
+    log('info',`🙋 <b>${esc(a.name)}</b> nggak punya tugas — nunggu perintah bos.`);
+    return;
+  }
+  const pct=Math.floor(Math.min(100,a.taskPct));
+  showBubble(a,`Boss, ${a.task} udah ${pct}%! ${pct>=75?'Segera kelar nih 😤':'Tetap fokus 💪'}`,3.5);
+  log('work',`📢 <b>${esc(a.name)}</b> lapor: ${esc(a.task)} — ${pct}%`);
+}
+
+// ---------- Player ----------
+const player={ x:11.5,y:14.5, emoji:'⚡', name:'Zeus', r:0.32, spd:3.6 };
+const keys={};
+
+// ---------- Waktu & jadwal ----------
+let gameMin=9*60, day=1, simSpeed=1, started=false;
+const DAYS=['Senin','Selasa','Rabu','Kamis','Jumat'];
+function clockStr(m){const h=Math.floor(m/60)%24,mm=Math.floor(m%60);return String(h).padStart(2,'0')+':'+String(mm).padStart(2,'0');}
+const schedule=[
+  {m:545, fn:()=>log('info',`☀️ Hari ${day} di Olympus mulai! Semua agent balik kerja.`)},
+  {m:600, fn:startMeeting},
+  {m:625, fn:endMeeting},
+  {m:720, fn:startLunch},
+  {m:780, fn:endLunch},
+  {m:900, coffee:true},
+  {m:1075, fn:goHomeAll},
+  {m:1080, fn:newDay}
+];
+schedule.forEach(s=>s.fired=false);
+
+// ---------- UI helpers ----------
+const $=(id)=>document.getElementById(id);
+const esc=(s)=>s.replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+function log(type,html){
+  const d=document.createElement('div'); d.className='fi';
+  const col={info:'var(--dim)',work:'#7cb7ff',ok:'#8ef0b1',warn:'#ffcf7a',fun:'#ff9ad5'}[type]||'var(--dim)';
+  d.innerHTML=`<span class="t" style="color:${col}">⬤ ${clockStr(gameMin)}</span> ${html}`;
+  const f=$('feed'); f.prepend(d);
+  while(f.children.length>70) f.lastChild.remove();
+}
+function toast(text){
+  const box=$('toasts'); if(!box) return;
+  const d=document.createElement('div'); d.className='toast'; d.innerHTML=text;
+  box.appendChild(d);
+  while(box.children.length>4) box.firstChild.remove();
+  setTimeout(()=>{ d.style.transition='opacity .5s'; d.style.opacity='0'; setTimeout(()=>d.remove(),500); },3500);
+}
+
+// ---------- Assembly of the Gods (meeting lapor status live) ----------
+function buildAssemblyScript(){
+  const lines=[['Athena','Oke Olympians, assembly! Lapor status ke bos — cepat dan jelas.']];
+  agents.forEach(a=>{
+    if(!a.task){
+      lines.push([a.name, rnd(['Bos, gue nunggu tugas nih 🙋','Agenda gue masih kosong bos — siap terima perintah!','Nunggu assignment, bos!'])]);
+    } else {
+      const pct=Math.floor(Math.min(100,a.taskPct));
+      lines.push([a.name, rnd([
+        `${a.task} — udah ${pct}%. ${pct>=75?'Sisa sedikit lagi!':'Jalan sesuai rencana.'}`,
+        `Soal ${a.task.toLowerCase()}, progres ${pct}%. Nggak ada kendala.`,
+        `${pct}% buat ${a.task.toLowerCase()}. On track, bos.`
+      ])]);
+    }
+  });
+  const idle=agents.filter(a=>!a.task).length;
+  lines.push(['Athena', idle===agents.length
+    ? 'Itu dia bos… kita semua nunggu perintah lo. Nganggur total 😅'
+    : idle===0 ? 'Semua on track, bos. Eksekusi terus! 🦉' : `${idle} agent masih nunggu tugas, bos. Sisanya on track 🦉`]);
+  return lines;
+}
+const Meeting={active:false,parts:[],li:0,t:0,phase:'idle',
+  start(){
+    if(this.active) return;
+    ChatMgr.cancel();
+    this.script=buildAssemblyScript();
+    this.parts=agents.slice(); this.li=0; this.t=1; this.phase='walk'; this.active=true;
+    this.parts.forEach((a,i)=>{ const s=MEETING_SPOTS[i%MEETING_SPOTS.length]; goTo(a,s[0],s[1],'MEETING'); a.stayT=0; });
+    log('work',`🏛️ <b>Assembly of the Gods</b> dimulai — semua agent lapor status.`);
+    toast('🏛️ Assembly dimulai — dengarkan laporan tim!');
+  },
+  update(dt){
+    if(!this.active) return;
+    if(this.phase==='walk'){
+      if(this.parts.every(a=>a.state==='MEETING')){ this.phase='talk'; this.t=1.2; }
+      else if(this.t>18) this.phase='talk';
+      else this.t+=dt;
+      return;
+    }
+    this.t-=dt;
+    if(this.t>0) return;
+    if(this.li>=this.script.length){ this.end(); return; }
+    const [who,text]=this.script[this.li];
+    const a=this.parts.find(p=>p.name===who);
+    if(a) showBubble(a,text,3.2);
+    this.li++; this.t=3.4;
+  },
+  end(){ if(!this.active)return; this.active=false; this.phase='idle';
+    this.parts.forEach(a=>{ if(a.state!=='HIDDEN') goDesk(a); });
+    log('ok',`✅ Assembly selesai. Back to work!`);
+  }
+};
+function startMeeting(){Meeting.start();}
+function endMeeting(){Meeting.end();}
+
+// ---------- Lunch ----------
+let lunchActive=false;
+function startLunch(){
+  lunchActive=true; ChatMgr.cancel();
+  const spots=LOUNGE_SPOTS.concat(PANTRY_SPOTS).sort(()=>Math.random()-.5);
+  agents.forEach((a,i)=>{ const s=spots[i%spots.length]; goTo(a,s[0],s[1],'LUNCH'); a.stayT=rndf(70,110); });
+  log('info',`🍇 <b>Makan siang!</b> Para dewa ke ambrosia bar & lounge zaitun.`);
+}
+function endLunch(){
+  lunchActive=false;
+  agents.forEach(a=>{ if(a.state==='LUNCH'||a.state.startsWith('toLunch')) goDesk(a); });
+  log('info','☕ Balik kerja lagi, semangat!');
+}
+
+// ---------- Coffee wave ----------
+function coffeeWave(){
+  const list=agents.filter(a=>a.state==='WORKING'||a.state==='WAITING').sort(()=>Math.random()-.5).slice(0,3);
+  list.forEach(a=>{ const s=rnd(PANTRY_SPOTS); goTo(a,s[0],s[1],'COFFEE'); a.stayT=rndf(25,40); });
+  if(list.length) log('fun',`☕ Gelombang nektar! ${list.map(a=>a.emoji+esc(a.name)).join(', ')} ke ambrosia bar.`);
+}
+
+// ---------- Pulang & hari baru ----------
+function goHomeAll(){
+  Meeting.end(); ChatMgr.cancel(); lunchActive=false;
+  agents.forEach(a=>goTo(a,DOOR[0],DOOR[1],'HIDDEN'));
+  log('info',`🏠 Jam 6! Para dewa turun dari Olympus…`);
+}
+function newDay(){
+  const fade=$('fade'); fade.classList.add('on');
+  setTimeout(()=>{
+    day++; gameMin=9*60; schedule.forEach(s=>s.fired=false);
+    agents.forEach(a=>{ a.fx=DOOR[0]+0.5; a.fy=DOOR[1]+0.5; a.energy=rndf(80,100); goDesk(a); });
+    log('info',`☀️ <b>Hari ${day}</b> (${DAYS[(day-1)%5]}) di Olympus dimulai!`);
+    fade.classList.remove('on');
+  },900);
+}
+
+// ---------- Obrolan antar agent ----------
+const TOPICS=[
+  {t:'market',lines:[
+    `Market lagi merah banget ya…`,
+    `Diamond hands, bro. Jangan panik.`,
+    `Gue cek DCA gue tiap 5 menit sih 😅`,
+    `Itu namanya bukan monitoring, itu penyiksaan.`]},
+  {t:'deadline',lines:[
+    `Bro, deadline Jumat masih realistis nggak?`,
+    `Kalau scope-nya nggak nambah lagi, bisa.`,
+    `Jangan jinx! Tiap bilang gitu, tugas nambah.`,
+    `😂 Klasik startup Web3 memang.`]},
+  {t:'weekend',lines:[
+    `Weekend mau ngapain?`,
+    `Nonton terus tidur. Recharge total.`,
+    `Same. Senin bareng mata panda ya?`,
+    `Deal 🐼`]},
+  {t:'kopi',lines:[
+    `Kopi ambrosia bar kok makin encer ya?`,
+    `Maya— eh maksud gue, siapa ya yang nyeduh 😅`,
+    `Besok gue bawa kopi sendiri.`,
+    `Aman, share dong!`]},
+  {t:'gosip',lines:[
+    `Assembly tadi lama banget ya…`,
+    `Satu jam buat satu slide 😭`,
+    `Yang penting snack-nya kan?`,
+    `Dari situ aja semangat gue.`]},
+  {t:'ide',lines:[
+    `Gue ada ide fitur baru nih.`,
+    `Tulis dulu, nanti kita bahas di assembly.`,
+    `Ganti reward token jadi poin experience gimana?`,
+    `Ooh, users pasti suka. Pitch ke bos!`]},
+  {t:'bug',lines:[
+    `Ares nemu 3 exploit kemarin.`,
+    `Berarti gue bikin 3 juga dong 😎`,
+    `Bug-nya lo yang kemarin tuh.`,
+    `Itu namanya fitur, bukan bug.`]}
+];
+const ChatMgr={phase:'idle',a:null,b:null,topic:null,li:0,t:0,cd:2,
+  tryStart(dt){
+    this.cd-=dt;
+    if(this.cd>0) return; this.cd=3;
+    if(this.phase!=='idle'||Meeting.active||lunchActive) return;
+    const cand=agents.filter(a=>a.state==='WORKING'||a.state==='WAITING'&&!a.task).filter(a=>a.chatCd<=0&&a.energy>25).sort(()=>Math.random()-.5);
+    if(cand.length<2) return;
+    if(Math.random()<0.5){
+      const [a,b]=[cand[0],cand[1]];
+      const spot=rnd(CHAT_SPOTS);
+      goTo(a,spot[0],spot[1],'CHATTING'); goTo(b,spot[0],spot[1],'CHATTING');
+      a.partner=b; b.partner=a;
+      this.a=a; this.b=b; this.topic=rnd(TOPICS); this.li=0; this.t=0; this.phase='walk';
+      log('fun',`💬 <b>${esc(a.name)}</b> ngobrol sama <b>${esc(b.name)}</b> soal ${this.topic.t}.`);
+    }
+  },
+  update(dt){
+    if(this.phase==='idle') return;
+    const {a,b}=this;
+    if(this.phase==='walk'){
+      this.t+=dt;
+      if(a.state==='CHATTING'&&b.state==='CHATTING'&&a.path.length===0&&b.path.length===0){
+        this.phase='talk'; this.t=1;
+      } else if(this.t>14) this.cancel();
+      return;
+    }
+    this.t-=dt;
+    if(this.t>0) return;
+    if(this.li>=this.topic.lines.length){ this.end(); return; }
+    const sp=(this.li%2===0)?a:b;
+    showBubble(sp,this.topic.lines[this.li],3);
+    this.li++; this.t=3;
+  },
+  end(){ const{a,b}=this;
+    [a,b].forEach(x=>{ x.chatCd=rndf(50,110); x.energy=Math.min(100,x.energy+12); if(x.state==='CHATTING') goDesk(x); x.partner=null; });
+    this.phase='idle';
+  },
+  cancel(){ if(this.phase==='idle')return; const{a,b}=this;
+    [a,b].forEach(x=>{ if(x&&x.state!=='HIDDEN') goDesk(x); x&&(x.partner=null); });
+    this.phase='idle'; }
+};
+
+// ---------- Event acak ----------
+let nextEventAt=50, evTimer=0, evKind=null;
+function triggerEvent(){
+  evKind=Math.random()<0.55?'ambrosia':'gas';
+  if(evKind==='ambrosia'){
+    const list=agents.filter(a=>a.state==='WORKING'||a.state==='WAITING'||a.state==='COFFEE').sort(()=>Math.random()-.5).slice(0,4);
+    list.forEach(a=>{ const s=rnd(PANTRY_SPOTS); goTo(a,s[0],s[1],'EVENT'); a.stayT=rndf(20,32); });
+    log('warn',`🍯 <b>Ambrosia & kopi di pantry!</b> ${list.length} dewa langsung menyergap.`);
+    evTimer=38;
+  } else {
+    const onchain=agents.filter(a=>['Onchain Analyst','Liquidity Provider','Bug hunting'].includes(a.role)&&a.state!=='HIDDEN');
+    onchain.forEach(a=>showBubble(a, Math.random()<.5?'😱 Gas 300 gwei?!':'🔥 Network ramai banget!',4));
+    log('warn',`🚨 <b>Gas fee meledak!</b> Tim on-chain mengeluh (wajar sih).`);
+    evTimer=16;
+    setTimeout(()=>log('ok','✅ Gas normal lagi. Semua transaksi dieksekusi 🚀'),9000);
+  }
+}
+
+// ---------- Update agent ----------
+function moveAlong(a,dt){
+  if(!a.path.length) return true;
+  const t=a.path[0], dx=t.x-a.fx, dy=t.y-a.fy, d=Math.hypot(dx,dy);
+  const step=a.spd*dt;
+  if(d<=step){ a.fx=t.x; a.fy=t.y; a.path.shift(); if(!a.path.length) return true; }
+  else { a.fx+=dx/d*step; a.fy+=dy/d*step; }
+  return false;
+}
+function updateAgent(a,dt){
+  a.chatCd-=dt; a.greetCd-=dt; a.wanderCd-=dt;
+  if(a.state==='HIDDEN') return;
+
+  if(a.state.startsWith('to')){
+    if(moveAlong(a,dt)){
+      a.state=a.next;
+      if(a.state==='WORKING'){
+        if(!a.task){ a.state='WAITING'; }
+        else if(Math.random()<.4) showBubble(a,rnd(['Oke, gas kerja 💻','Fokus mode ON 🎧','*buka laptop*']),2.5);
+      }
+      if(a.state==='COFFEE'||a.state==='LUNCH'||a.state==='EVENT'){ if(!a.stayT) a.stayT=30; showBubble(a, a.state==='COFFEE'?'☕ Nektar… maksudnya kopi.':a.state==='LUNCH'?'🍇 Ambrosia dulu!':(evKind==='ambrosia'?'🍯 AMBROSIA!':'😅'),3); }
+    }
+    return;
+  }
+  if(a.state==='WORKING'){
+    a.taskPct+=a.rate*dt; a.energy-=0.9*dt;
+    if(Math.random()<dt*0.03) showBubble(a,rnd(WORK_BUBBLES[a.role]),3);
+    const m=Math.floor(Math.min(100,a.taskPct)/25);
+    if(m>a.mile&&m<4){ a.mile=m; showBubble(a,`Boss, udah ${m*25}% nih 💪`,2.5); }
+    if(a.taskPct>=100){
+      log('ok',`🎉 <b>${esc(a.name)}</b> menyelesaikan tugas: <b>${esc(a.task)}</b>`);
+      toast(`🎉 ${a.emoji} ${esc(a.name)} kelar: ${esc(a.task)}`);
+      showBubble(a,'Bos, tugasnya udah kelar! ✅ Minta tugas baru dong 🙋',4);
+      a.task=''; a.taskPct=0; a.mile=0; a.state='WAITING';
+      a.energy=Math.max(10,a.energy-6);
+    }
+    else if(a.energy<32&&Math.random()<dt*0.12){
+      const s=rnd(PANTRY_SPOTS); goTo(a,s[0],s[1],'COFFEE'); a.stayT=rndf(22,35);
+      showBubble(a,'Butuh nektar… eh, kopi ☕',2);
+    }
+    return;
+  }
+  if(a.state==='WAITING'){
+    a.energy=Math.min(100,a.energy+0.35*dt);
+    a.askCd-=dt;
+    if(a.askCd<=0){
+      a.askCd=rndf(45,110);
+      showBubble(a,rnd(['Bos, ada tugas buat gue? 🙋','Nunggu perintah nih… 🕐','Bosen deh, kasih kerjaan dong bos!','Kalau butuh gue, tinggal bilang ya bos 👋']),3.5);
+    } else if(a.wanderCd<=0&&Math.random()<.35){
+      a.wanderCd=rndf(50,120);
+      const s=rnd(PANTRY_SPOTS.concat(LOUNGE_SPOTS));
+      goTo(a,s[0],s[1],'IDLE'); a.stayT=rndf(4,8);
+    }
+    return;
+  }
+  if(a.state==='COFFEE'||a.state==='LUNCH'||a.state==='EVENT'||a.state==='IDLE'){
+    if(a.state!=='IDLE') a.energy=Math.min(100,a.energy+0.7*dt);
+    a.stayT-=dt;
+    if(a.stayT<=0) goDesk(a);
+    return;
+  }
+  // CHATTING / MEETING: diam, dikendalikan manager
+}
+
+function separation(){
+  const ok=(x,y)=>walk(Math.floor(x),Math.floor(y));
+  for(let i=0;i<agents.length;i++) for(let j=i+1;j<agents.length;j++){
+    const a=agents[i],b=agents[j];
+    if(a.state==='HIDDEN'||b.state==='HIDDEN') continue;
+    if(a.state==='MEETING'||b.state==='MEETING') continue;
+    const dx=b.fx-a.fx, dy=b.fy-a.fy, d=Math.hypot(dx,dy);
+    if(d<0.55&&d>0.001){
+      const push=(0.55-d)*0.5/d;
+      const ax=a.fx-dx*push*0.5, ay=a.fy-dy*push*0.5;
+      const bx=b.fx+dx*push*0.5, by=b.fy+dy*push*0.5;
+      if(ok(ax,ay)){a.fx=ax;a.fy=ay;}
+      if(ok(bx,by)){b.fx=bx;b.fy=by;}
+    }
+  }
+}
+
+// ---------- Sapa player ----------
+function greetingsTick(){
+  if(!started) return;
+  agents.forEach(a=>{
+    if(a.greetCd>0) return;
+    if(!['WORKING','COFFEE','IDLE','CHATTING','LUNCH'].includes(a.state)) return;
+    const d=Math.hypot(a.fx-player.x,a.fy-player.y);
+    if(d<2.1){
+      a.greetCd=45;
+      const lines=a.p.greet.concat([`Eh, ${player.name}! ${a.emoji}`,`${player.name} dateng! Ada perintah apa?`]);
+      showBubble(a,rnd(lines),3.2);
+    }
+  });
+}
+setInterval(greetingsTick,2500);
+
+// ---------- Otak balasan chat ----------
+// (template) — dipakai kalau LLM mati/error
+
+// ---------- LLM opsional (AI beneran) ----------
+const LLM_DEF={
+  gemini:{model:'gemini-2.5-flash',base:'https://generativelanguage.googleapis.com/v1beta',key:true,
+    hint:'Gratis: buka aistudio.google.com → "Get API key". Model cepat: gemini-2.5-flash.'},
+  zai:{model:'glm-4-flash',base:'https://api.z.ai/api/paas/v4',key:true,
+    hint:'Key gratis di z.ai / bigmodel.cn. GLM-4-Flash gratis dipakai.'},
+  openai:{model:'gpt-4o-mini',base:'https://api.openai.com/v1',key:true,
+    hint:'Key dari platform.openai.com. Model murah: gpt-4o-mini.'},
+  openrouter:{model:'meta-llama/llama-3.3-70b-instruct:free',base:'https://openrouter.ai/api/v1',key:true,
+    hint:'Key gratis di openrouter.ai. Model default-nya gratis (akhiran :free).'},
+  ollama:{model:'llama3.2',base:'http://localhost:11434/v1',key:false,
+    hint:'Install ollama.com, lalu: ollama pull llama3.2. Kalau ditolak CORS: jalankan OLLAMA_ORIGINS="*" ollama serve'}
+};
+let LLM=null;
+try{ LLM=JSON.parse(localStorage.getItem('km_llm')||'null'); }catch(e){}
+LLM=LLM||{on:false,provider:'gemini',model:'',key:''};
+function llmReady(){ const d=LLM_DEF[LLM.provider]; return !!(LLM.on&&d&&(!d.key||LLM.key)); }
+function saveLLM(){ try{localStorage.setItem('km_llm',JSON.stringify(LLM));}catch(e){} updateBrainBtn(); }
+function updateBrainBtn(){ $('btnBrain').classList.toggle('on',llmReady()); }
+
+function systemPrompt(a){
+  const mood=a.energy>65?'bersemangat':a.energy>35?'biasa aja':'kelelahan pengen kopi';
+  return `Kamu adalah ${a.name}, ${a.role} di PT Olympus Bahagia — perusahaan Web3 di dunia Olympus. Kepribadian: ${a.bio}
+Status kamu SEKARANG: ${a.task?`lagi mengerjakan tugas dari bos "${a.task}" — progress ${Math.floor(a.taskPct)}%`:'tidak punya tugas, nunggu perintah bos'}, mood: ${mood}, jam kantor ${clockStr(gameMin)} hari ke-${day} (${DAYS[(day-1)%5]}).
+Yang ngajak ngobrol adalah BOS perusahaan, panggil dia ${player.name}.
+ATURAN BALASAN:
+- Selalu Bahasa Indonesia santai (boleh gue/lu kalau cocok dengan kepribadianmu)
+- Maksimal 2-3 kalimat pendek, gaya chat — JANGAN panjang lebar, JANGAN markdown, JANGAN poin-poin kecuali diminta
+- Tetap 100% dalam karakter ${a.name}
+- Kalau bos minta dibikinkan sesuatu (konten, laporan, analisa), buatin hasilnya langsung dan singkat`;
+}
+async function llmChat(a,text){
+  const d=LLM_DEF[LLM.provider]; const model=(LLM.model||d.model).trim(); const base=(d.base||'').trim();
+  const sys=systemPrompt(a);
+  const hist=(a.chatHist||[]);
+  const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),15000);
+  try{
+    let r;
+    if(LLM.provider==='gemini'){
+      r=await fetch(`${base}/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(LLM.key)}`,{
+        method:'POST',headers:{'Content-Type':'application/json'},signal:ctrl.signal,
+        body:JSON.stringify({
+          systemInstruction:{parts:[{text:sys}]},
+          contents:hist.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]})).concat([{role:'user',parts:[{text}]}]),
+          generationConfig:{temperature:0.9,maxOutputTokens:350}
+        })});
+    }else{
+      r=await fetch(`${base}/chat/completions`,{
+        method:'POST',signal:ctrl.signal,
+        headers:{'Content-Type':'application/json',...(d.key?{Authorization:'Bearer '+LLM.key}:{})},
+        body:JSON.stringify({model,temperature:0.9,max_tokens:350,
+          messages:[{role:'system',content:sys}].concat(hist).concat([{role:'user',content:text}])})});
+    }
+    if(!r.ok){ let msg='HTTP '+r.status; try{ const j=await r.json(); msg=j.error?.message||j.message||msg; }catch(e){} throw new Error(msg); }
+    const j=await r.json();
+    const out=LLM.provider==='gemini'
+      ?(j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts&&j.candidates[0].content.parts[0]&&j.candidates[0].content.parts[0].text)
+      :(j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content);
+    if(!out) throw new Error('respon kosong');
+    return out.trim();
+  } finally { clearTimeout(to); }
+}
+
+const RULES=[
+  [/(ngapain|kerja|task|lagi ap|sibuk|progress|status)/,'work'],
+  [/(bos|ceo|atasan)/,'bos'],
+  [/(kopi|ngopi|coffee)/,'kopi'],
+  [/(deadline|tenggat|jumat)/,'deadline'],
+  [/(makan|lunch|lapar|kantin|food|snack)/,'makan'],
+  [/(capek|lelah|penat|stress|burnout|bug|error)/,'capek'],
+  [/(gaji|bonus|uang|raise|upah|thr)/,'gaji'],
+  [/(meeting|rapat|assembly|standup)/,'meeting'],
+  [/(main|game|bentar|break|istirahat|rebah)/,'break'],
+  [/(kerja bagus|mantap|hebat|keren|good job|pinter)/,'puji'],
+  [/(siapa|nama|kamu sapa|introduce|intro)/,'whoami'],
+  [/\b(halo|hallo|hai|hei|hey|hello|hi|pagi|siang|sore|malam|yo|assalam|met)\b/,'greet']
+];
+function agentReply(a,text){
+  if(a.state==='HIDDEN') return rnd([`Zzz… aku udah pulang 😴 besok ya!`,`Sudah di rumah ni. Chat besok pas masuk kantor ya 👋`]);
+  const t=' '+text.toLowerCase().trim()+' ';
+
+  // link → nggak bisa dibuka, minta poin-poinnya
+  if(/https?:\/\/|www\.|\.(com|io|trade|xyz|eth|id|gg)\b/i.test(text)) return pickReply(a,URL_POOL);
+
+  // minta bikin konten → Hera yang bikin draft beneran
+  if(/(bikin|buatin|buatkan|bikinin|nulis|draft|caption)/.test(t)&&/(konten|kontent|content|post|thread|caption|story)/.test(t)){
+    let topic=topicFrom(text);
+    if(topic==='ini'&&a.lastTopic) topic=a.lastTopic; else a.lastTopic=topic;
+    if(a.role==='Content Creator'){
+      const draft=generateContent(topic);
+      a.lastContent=draft;
+      log('fun',`✍️ <b>${esc(a.name)}</b> bikin draft konten soal "${esc(topic)}" buat bos.`);
+      return draft;
+    }
+    return pickReply(a,[`Itu kebagian Hera tuh, Content Creator kita 👑 Sapa dia dong!`,`Konten bukan jurusan gue 😅 Hera yang ratu konten di sini.`]);
+  }
+
+  // follow-up soal draft konten terakhir
+  if(a.lastContent&&/(hasil|draft|konten|lanjut)/.test(t)&&/(mana|gimana|udah|mana nih)/.test(t)){
+    return `Nih, gue ulang draft-nya ya:\n\n${a.lastContent}`;
+  }
+  if(a.lastContent&&/story/.test(t)){
+    return `Story intinya: "${a.lastContent.split('\n')[0]}"\n\nMau gue bikinin angle lain? Bilang aja "bikin konten tentang ..." 👑`;
+  }
+
+  // minta agent kerjain sesuatu → langsung jadi tugas 📌
+  if(/(bikin|buatin|buatkan|bikinin|kerjain|selesaikan|susun|rapikan|carikan)\b/.test(t)){
+    const task=taskFrom(text);
+    assignTask(a,task);
+    return `Siap bos! Gue catat sebagai tugas: "${task}" 📌\nLangsung gue kerjain sekarang — progress-nya bisa dilihat di tab 📋 Tugas.`;
+  }
+
+  for(const[re,key]of RULES){
+    if(re.test(t)){
+      if(key==='work'){
+        if(!a.task) return rnd([`Nggak ada tugas buat gue nih, bos — kasih dong! 🙋 (bisa lewat tab 📋 Tugas atau bilang "kerjakan ...")`,`Gue idle nih bos. Available 100%! 😄`]);
+        return rnd([
+          `Lagi ${a.task.toLowerCase()} — udah ${Math.floor(a.taskPct)}% nih.`,
+          `Sibuk ${a.task.toLowerCase()} (${Math.floor(a.taskPct)}%). Bentar ya!`]);
+      }
+      const pool=a.p[key]||BASE_P[key];
+      if(pool) return pickReply(a,pool,false);
+    }
+  }
+  if(/\?/.test(t)) return pickReply(a,a.p.fallback.concat([`Hmm, good question. Gue mikir dulu ya 🤔`]),true);
+  return pickReply(a,a.p.fallback,true);
+}
+
+// ---------- Audio kecil ----------
+let AC=null;
+function pop(){
+  try{
+    if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)();
+    const o=AC.createOscillator(),g=AC.createGain();
+    o.frequency.value=740; o.type='sine';
+    g.gain.setValueAtTime(.08,AC.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+.15);
+    o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime+.16);
+  }catch(e){}
+}
+
+// ============ RENDERING — Olympus loft ============
+function poly(pts,fill,stroke){
+  c.beginPath();
+  pts.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));
+  c.closePath();
+  if(fill){c.fillStyle=fill;c.fill();}
+  if(stroke){c.strokeStyle=stroke;c.lineWidth=1;c.stroke();}
+}
+function floorTile(x,y){
+  if(!islandTile(x,y)) return;
+  const px=X(x,y),py=Y(x,y);
+  const pts=[[px,py],[px+HW,py+HH],[px,py+TH],[px-HW,py+HH]];
+  const zone=zoneAt(x,y);
+  let a='#e7dfcb',b='#ded4be';
+  if(zone==='Athena'){a='#c4b59e';b='#b7a68f';}
+  if(zone==='Demeter'){a='#8bb267';b='#7da45b';}
+  if(zone==='Aphrodite'){a='#e6a6bb';b='#d993ad';}
+  if(zone==='Hera'){a='#be9ad0';b='#aa85bf';}
+  if(zone==='Ares'){a='#9a604f';b='#865244';}
+  if(zone==='Hades'){a='#34394b';b='#292f40';}
+  const path=isPathTile(x,y);
+  if(path){a='#e8dfca';b='#d7cbb4';}
+  poly(pts,((x+y)%2===0)?a:b,path?'rgba(151,117,58,.65)':'rgba(45,35,30,.28)');
+}
+
+const OLYMPUS_ZONES=[
+  {name:'ATHENA',sub:'STRATEGY',x:4,y:4,color:'#d9b96f'},
+  {name:'DEMETER',sub:'GARDENS',x:19,y:4,color:'#8fc56a'},
+  {name:'APHRODITE',sub:'GARDENS OF LOVE',x:4,y:10,color:'#e78eb0'},
+  {name:'HERA',sub:'AMPHITHEATRE',x:19,y:10,color:'#c197d5'},
+  {name:'ARES',sub:'ARENA',x:5,y:15,color:'#d36a48'},
+  {name:'HADES',sub:'UNDERWORLD',x:18,y:15,color:'#65d8bd'},
+  {name:'ZEUS',sub:'FOUNDER • HIGH THRONE',x:11.5,y:8.5,color:'#f2ce65'}
+];
+function zoneAt(x,y){
+  let best=null,dist=Infinity;
+  OLYMPUS_ZONES.forEach(z=>{if(z.name==='ZEUS')return; const d=((x-z.x)*.78)**2+((y-z.y)*1.2)**2;if(d<dist){dist=d;best=z;}});
+  return best&&dist<20?best.name:'';
+}
+function isPathTile(x,y){
+  // Jaringan jalan bercabang dari singgasana pusat menuju enam wilayah.
+  const spokes=[[11.5,8.5,4,4],[11.5,8.5,19,4],[11.5,8.5,4,10],[11.5,8.5,19,10],[11.5,8.5,5,15],[11.5,8.5,18,15]];
+  return spokes.some(([x1,y1,x2,y2])=>{
+    const vx=x2-x1,vy=y2-y1,wx=x-x1,wy=y-y1,t=Math.max(0,Math.min(1,(wx*vx+wy*vy)/(vx*vx+vy*vy)));
+    return Math.hypot(x-(x1+t*vx),y-(y1+t*vy))<.72;
+  });
+}
+function box(fx0,fy0,fx1,fy1,z,top,left,right){
+  const N=[X(fx0,fy0),Y(fx0,fy0)-z], E=[X(fx1,fy0),Y(fx1,fy0)-z],
+        S=[X(fx1,fy1),Y(fx1,fy1)-z], W=[X(fx0,fy1),Y(fx0,fy1)-z],
+        Sg=[X(fx1,fy1),Y(fx1,fy1)], Wg=[X(fx0,fy1),Y(fx0,fy1)], Eg=[X(fx1,fy0),Y(fx1,fy0)];
+  poly([Wg,Sg,S,W],left);
+  poly([Sg,Eg,E,S],right);
+  poly([N,E,S,W],top);
+}
+function ellipse(cx,cy,rx,ry,fill){ c.beginPath(); c.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); c.fillStyle=fill; c.fill(); }
+
+// kolom marmer dorik
+function drawColumn(gx,gy,h){
+  const cx=X(gx+0.5,gy+0.5), cy=Y(gx+0.5,gy+0.5)+HH;
+  ellipse(cx,cy+2,11,4.5,'rgba(10,15,35,.2)');
+  c.fillStyle='#ece4d2'; c.fillRect(cx-8,cy-h,16,h);
+  c.fillStyle='rgba(150,130,95,.28)'; c.fillRect(cx+3,cy-h,5,h);
+  c.strokeStyle='rgba(150,130,95,.3)'; c.lineWidth=1;
+  [-5,-1.5,2].forEach(ox=>{c.beginPath();c.moveTo(cx+ox,cy-h+5);c.lineTo(cx+ox,cy-5);c.stroke();});
+  c.fillStyle=GOLD; c.fillRect(cx-10,cy-h,20,5); c.fillRect(cx-10,cy-6,20,5);
+}
+// pot amphora + daun zaitun
+function drawAmphora(gx,gy,big){
+  const cx=X(gx+0.5,gy+0.5), cy=Y(gx+0.5,gy+0.5)+HH;
+  const s=big?1.35:1;
+  ellipse(cx,cy+3,10*s,4.5*s,'rgba(10,15,35,.18)');
+  c.fillStyle='#c96f4a';
+  c.beginPath();
+  c.moveTo(cx-5*s,cy-9*s);
+  c.quadraticCurveTo(cx-10*s,cy-1*s,cx,cy);
+  c.quadraticCurveTo(cx+10*s,cy-1*s,cx+5*s,cy-9*s);
+  c.closePath(); c.fill();
+  c.fillRect(cx-3*s,cy-15*s,6*s,6*s);
+  c.fillStyle=GOLD; c.fillRect(cx-4*s,cy-11*s,8*s,1.5*s);
+  ellipse(cx-6*s,cy-21*s,8*s,6*s,'#7d8f6a');
+  ellipse(cx+6*s,cy-20*s,7*s,5*s,'#6d805c');
+  ellipse(cx,cy-25*s,8*s,6*s,'#8ba075');
+}
+
+// dinding belakang (utara: stucco krem + jendela aegean; barat: bata loft)
+function drawWalls(){
+  const WINGROUP=new Set([2,3,4,8,9,10,17,18,19]);
+  for(let x=0;x<MAP_W;x++){
+    const px=X(x,0),py=Y(x,0);
+    poly([[px,py],[px+HW,py+HH],[px+HW,py+HH-WALL_H],[px,py-WALL_H]],'#f3ecdd','rgba(150,120,70,.3)');
+    poly([[px,py],[px+HW,py+HH],[px+HW,py+HH-3],[px,py-3]],GOLD); // lis emas
+    if(WINGROUP.has(x)){
+      poly([[px+HW*.18,py+HH*.18-WALL_H*.82],[px+HW*.82,py+HH*.82-WALL_H*.82],[px+HW*.82,py+HH*.82-WALL_H*.25],[px+HW*.18,py+HH*.18-WALL_H*.25]],'rgba(96,158,222,.8)','rgba(255,255,255,.65)');
+      poly([[px+HW*.48,py+HH*.48-WALL_H*.82],[px+HW*.52,py+HH*.52-WALL_H*.82],[px+HW*.52,py+HH*.52-WALL_H*.25],[px+HW*.48,py+HH*.48-WALL_H*.25]],'rgba(240,248,255,.7)');
+    }
+  }
+  for(let y=1;y<MAP_H;y++){
+    const px=X(0,y),py=Y(0,y);
+    poly([[px,py],[px+HW,py-HH],[px+HW,py-HH-WALL_H],[px,py-WALL_H]],'#a85a44','rgba(70,30,20,.35)');
+    // nat bata
+    c.strokeStyle='rgba(60,28,18,.35)'; c.lineWidth=1;
+    c.beginPath(); c.moveTo(px+3,py-HH*0.5-WALL_H*0.33); c.lineTo(px+HW-3,py+HH*0.5-WALL_H*0.33); c.stroke();
+    c.beginPath(); c.moveTo(px+3,py-HH*0.5-WALL_H*0.66); c.lineTo(px+HW-3,py+HH*0.5-WALL_H*0.66); c.stroke();
+    c.beginPath(); c.moveTo(px+HW*0.5,py-HH*0.5-WALL_H*0.33); c.lineTo(px+HW*0.5,py+HH*0.5-WALL_H*0.66); c.stroke();
+  }
+  // Sudut ruangan Hades: dinding obsidian dan panel ungu di belakang meja analis.
+  const hx=X(8,7), hy=Y(8,7);
+  poly([[hx,hy],[hx+HW,hy+HH],[hx+HW,hy+HH-92],[hx,hy-92]],'#252238','#71608f');
+  poly([[hx+HW,hy+HH],[hx+2*HW,hy],[hx+2*HW,hy-92],[hx+HW,hy+HH-92]],'#171827','#71608f');
+  // Panel blok seperti jendela ke Underworld.
+  poly([[hx+18,hy-62],[hx+HW-6,hy+HH-62],[hx+HW-6,hy+HH-18],[hx+18,hy-18]],'#392f55','#a58bd4');
+  poly([[hx+HW+12,hy+HH-62],[hx+2*HW-12,hy-62],[hx+2*HW-12,hy-18],[hx+HW+12,hy+HH-18]],'#252943','#8b76bc');
+  // Simbolis tiga aliran data seperti gerbang rantai.
+  c.fillStyle='#9f82dc'; c.fillRect(hx+38,hy-48,5,20); c.fillRect(hx+52,hy-40,5,20); c.fillRect(hx+66,hy-52,5,24);
+  c.fillStyle='#64d7c8'; c.fillRect(hx+HW+34,hy+HH-45,5,18); c.fillRect(hx+HW+48,hy+HH-53,5,26); c.fillRect(hx+HW+62,hy+HH-38,5,11);
+  // papan emas "SPRINT XLII" di dinding utara ruang assembly
+  const wx=X(18,0),wy=Y(18,0),wx2=X(20,0),wy2=Y(20,0);
+  const midx=(wx+wx2+HW)/2+10, midy=(wy+wy2+HH)/2-WALL_H*.72;
+  c.save();
+  c.fillStyle='#fdf6e3'; c.strokeStyle=GOLD; c.lineWidth=2;
+  c.fillRect(midx-58,midy-18,116,36); c.strokeRect(midx-58,midy-18,116,36);
+  c.fillStyle='#7a5b16'; c.font='700 12px system-ui'; c.textAlign='center'; c.textBaseline='middle';
+  c.fillText('SPRINT XLII 🏆',midx,midy);
+  c.restore();
+  // kolom marmer pemisah ruang assembly (pintu di y=3)
+  for(let y=1;y<=6;y++){ if(y===3) continue; drawColumn(14,y,44); }
+}
+
+function drawFloor(){
+  for(let y=0;y<MAP_H;y++) for(let x=0;x<MAP_W;x++) floorTile(x,y);
+  // Tepi pulau dan lapisan batu bawah untuk membaca bentuk pulau terapung.
+  for(let y=0;y<MAP_H;y++) for(let x=0;x<MAP_W;x++) if(islandTile(x,y)&&!islandTile(x,y+1)){
+    const px=X(x,y),py=Y(x,y);
+    poly([[px,py+TH-2],[px+HW,py+HH+TH-2],[px+HW,py+HH+TH+15],[px,py+TH+12]],'#766b64','#b4a58b');
+  }
+  // Tepian emas halus mengikat seluruh wilayah sebagai satu pulau Olympus.
+  const edge=[[X(11.5,0),Y(11.5,0)],[X(23,8.5),Y(23,8.5)],[X(11.5,17),Y(11.5,17)],[X(0,8.5),Y(0,8.5)]];
+  poly(edge,null,'#c9a95d');
+}
+
+function drawThrone(z){
+  const x=z.x,y=z.y;
+  const gold='#d4af37', stone=z.name==='HADES'?'#343849':z.name==='ARES'?'#60443e':'#d7cbb3';
+  // podium berundak, sandaran, dan atap sederhana; tanpa sprite karakter.
+  box(x-.95,y-.25,x+.95,y+.95,9,stone,'#a69a85','#837965');
+  box(x-.7,y-.15,x+.7,y+.65,18,z.color,'#b39d72','#82704f');
+  box(x-.52,y-.55,x+.52,y+.05,37,gold,'#a98233','#806224');
+  c.fillStyle=stone;c.fillRect(X(x-.55,y-.55),Y(x-.55,y-.55)-45,6,45);c.fillRect(X(x+.42,y-.55),Y(x+.42,y-.55)-45,6,45);
+  c.fillStyle=gold;c.fillRect(X(x-.62,y-.55)-2,Y(x-.62,y-.55)-48,38,6);
+  c.fillStyle='#fff4d1';c.font='700 13px system-ui';c.textAlign='center';c.textBaseline='middle';
+  c.fillText(z.name,X(x,y),Y(x,y)-62);
+  c.fillStyle='#382f25';c.font='700 8px system-ui';c.fillText(z.sub,X(x,y),Y(x,y)-49);
+}
+function drawOlympusMap(){
+  const sky=c.createLinearGradient(0,0,0,cv.height);
+  sky.addColorStop(0,'#79c8f3');sky.addColorStop(.58,'#b6e4f5');sky.addColorStop(1,'#f3dfb1');
+  c.fillStyle=sky;c.fillRect(0,0,cv.width,cv.height);
+  // Awan piksel dan cahaya di belakang pulau.
+  c.fillStyle='rgba(255,255,255,.65)';
+  [[125,180,100,18],[165,164,58,16],[1035,170,112,20],[1090,153,65,18],[505,90,74,14]].forEach(([x,y,w,h])=>{c.fillRect(x,y,w,h);c.fillRect(x+15,y-10,w*.55,h);});
+  c.fillStyle='rgba(245,223,150,.35)';c.fillRect(0,540,cv.width,180);
+  drawFloor();
+  // Marka tiap zona sebagai landmark peta, tetap terlihat meski wilayah belum dihias detail.
+  OLYMPUS_ZONES.forEach(z=>{
+    const gx=X(z.x,z.y),gy=Y(z.x,z.y);
+    c.fillStyle='rgba(25,29,43,.78)';c.fillRect(gx-48,gy-94,96,20);
+    c.strokeStyle=z.color;c.lineWidth=2;c.strokeRect(gx-48,gy-94,96,20);
+    c.fillStyle='#fff3d2';c.font='700 10px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(z.name,gx,gy-84);
+    if(z.name!=='ZEUS') drawThrone(z);
+  });
+  drawThrone(OLYMPUS_ZONES.find(z=>z.name==='ZEUS'));
+}
+
+// furniture: mengembalikan daftar {depth, draw}
+function furnitureList(){
+  const F=[];
+  const add=(depth,fn)=>F.push({depth,fn});
+  // Meja kerja Hades: layar explorer, arsip wallet, dan obor Underworld.
+  add(8+12,()=>{
+    box(8.25,8.15,10.75,9.05,19,'#51436d','#302a43','#211f32');
+    box(8.8,8.1,9.7,8.55,34,'#171b2d','#292b42','#101522');
+    const sx=X(9.25,8.28), sy=Y(9.25,8.28)-35;
+    c.fillStyle='#78d8d0'; c.fillRect(sx-12,sy-7,24,2);
+    c.fillStyle='#b9a0ed'; c.fillRect(sx-12,sy-2,6,2); c.fillRect(sx-3,sy-2,15,2);
+    c.fillStyle='#e9c66e'; c.fillRect(sx-12,sy+3,18,2);
+    box(10.15,8.25,10.55,8.7,27,'#403952','#2c293a','#22202e');
+    // Obor ungu pada dua sisi meja.
+    [[8.05,8.2],[11.1,8.2]].forEach(([tx,ty])=>{
+      const fx=X(tx+.5,ty+.5), fy=Y(tx+.5,ty+.5);
+      c.fillStyle='#8462bd'; c.fillRect(fx-2,fy-23,4,18);
+      c.fillStyle='#bd88ff'; c.fillRect(fx-3,fy-29,6,7);
+      c.fillStyle='rgba(153,103,225,.22)'; c.fillRect(fx-8,fy-33,16,4);
+    });
+    // Peti arsip bergaya batu di belakang kursi.
+    box(11.15,9.35,12.15,10.2,24,'#343347','#252536','#1d1e2b');
+    c.fillStyle='#9c83ca'; c.fillRect(X(11.45,9.5),Y(11.45,9.5)-20,19,3);
+    c.fillStyle=GOLD; c.fillRect(X(11.7,9.5),Y(11.7,9.5)-17,5,5);
+  });
+  // ambrosia bar: counter marmer + mesin kopi emas + dispenser
+  add(1+4,()=>{
+    box(1,1,5,2,15,'#efe8da','#d8cfbc','#c9bfa8');
+    poly([[X(1,2),Y(1,2)],[X(5,2),Y(5,2)],[X(5,2)-0,Y(5,2)-3],[X(1,2),Y(1,2)-3]],GOLD); // lis emas depan
+    box(2.1,1.1,2.7,1.9,24,'#2b2b33','#1f1f26','#191920'); // mesin kopi
+    ellipse(X(2.4,1.5),Y(2.4,1.5)+8-24,7,3,'#15151b');
+    c.fillStyle=GOLD; c.fillRect(X(2.7,1.3)-2,Y(2.7,1.3)-30,4,3);
+    box(3.6,1.2,4.3,1.8,32,'#dfeaf5','#b9cee0','#a3bcd2');
+    ellipse(X(3.95,1.5),Y(3.95,1.5)+6-32,8,4,'#8fd0ff');
+  });
+  add(3+3,()=>{ // meja bundar marmer pantry
+    ellipse(X(3.5,3.5),Y(3.5,3.5)-6,20,10,'#c9bfa8');
+    ellipse(X(3.5,3.5),Y(3.5,3.5)-9,20,10,'#efe8da');
+    ellipse(X(3.5,3.5),Y(3.5,3.5)-9,7,3.5,GOLD);
+  });
+  add(13+2,()=>{ // RPC node server
+    box(13.1,2.1,13.9,2.9,20,'#2e3444','#232836','#1d2230');
+    const fx=X(13.9,2.5), fy=Y(13.9,2.5)-16;
+    c.fillStyle='#4ade80'; c.fillRect(fx-4,fy-4,3,3);
+    c.fillStyle='#f87171'; c.fillRect(fx+1,fy-4,3,3);
+    c.fillStyle='#4ade80'; c.fillRect(fx-4,fy+2,3,3);
+    c.fillStyle='#60a5fa'; c.fillRect(fx+1,fy+2,3,3);
+  });
+  // meja kerja kayu + laptop + kursi + lampu gantung
+  DESKS.forEach(([dx,dy])=>{
+    add(dx+1+dy,()=>{
+      box(dx+.05,dy+.05,dx+1.95,dy+.95,13,'#a3743f','#7e5730','#6d4b29');
+      c.strokeStyle='rgba(212,175,55,.55)'; c.lineWidth=1;
+      c.beginPath(); c.moveTo(X(dx+.1,dy+.1),Y(dx+.1,dy+.1)-13); c.lineTo(X(dx+1.9,dy+.1),Y(dx+1.9,dy+.1)-13); c.stroke();
+      const lx=X(dx+1,dy+.5), ly=Y(dx+1,dy+.5)-13;
+      c.fillStyle='#2c3242'; c.fillRect(lx-9,ly-12,18,12);
+      c.fillStyle='#7fe3ff'; c.fillRect(lx-8,ly-11,16,9);
+      c.fillStyle='#454d63'; c.fillRect(lx-8,ly,16,3);
+      const chx=X(dx+.5,dy+1.5), chy=Y(dx+.5,dy+1.5);
+      ellipse(chx,chy+2,10,5,'rgba(0,0,0,.12)');
+      ellipse(chx,chy-6,9,6,'#8b7355');
+      c.fillStyle='#75603f'; c.fillRect(chx-9,chy-16,18,6);
+      // lampu gantung loft
+      c.strokeStyle='#3a3a42'; c.lineWidth=2;
+      c.beginPath(); c.moveTo(lx,ly-38); c.lineTo(lx,ly-52); c.stroke();
+      ellipse(lx,ly-54,9,5,'rgba(255,217,122,.25)');
+      ellipse(lx,ly-54,4,4,'#ffd97a');
+    });
+  });
+  // meja assembly marmer
+  add(19+3,()=>{
+    box(17.05,2.05,19.95,3.95,13,'#efe9dc','#cfc6b2','#bdb49e');
+    c.strokeStyle='rgba(140,125,95,.4)'; c.lineWidth=1;
+    c.beginPath(); c.moveTo(X(17.4,2.6),Y(17.4,2.6)-12); c.quadraticCurveTo(X(18.3,3),Y(18.3,3)-14,X(19.2,2.5),Y(19.2,2.5)-12); c.stroke();
+    c.beginPath(); c.moveTo(X(17.8,3.4),Y(17.8,3.4)-12); c.quadraticCurveTo(X(18.6,3.2),Y(18.6,3.2)-13,X(19.5,3.5),Y(19.5,3.5)-12); c.stroke();
+    MEETING_SPOTS.forEach(([sx,sy])=>{
+      const px=X(sx+.5,sy+.5),py=Y(sx+.5,sy+.5);
+      ellipse(px,py+2,9,4.5,'rgba(0,0,0,.10)');
+      ellipse(px,py-5,8,5,'#6b7a99');
+    });
+  });
+  // amphora zaitun
+  [[1,5,0],[1,12,0],[22,7,0],[22,16,0],[16,16,0],[13,10,1]].forEach(([px,py,big])=>{
+    add(px+py,()=>drawAmphora(px,py,big));
+  });
+  // kolom marber pintu masuk
+  add(10+16,()=>drawColumn(10,16,44));
+  add(12+16,()=>drawColumn(12,16,44));
+  // sofa linen + meja lounge
+  add(19+16,()=>{
+    box(17.05,16.05,19.95,16.95,12,'#d9d0c0','#b5aa96','#a49a86');
+    box(17.05,16.0,19.95,16.35,22,'#e2dacb','#c0b5a0','#afa48f');
+  });
+  add(19+14,()=>{
+    box(19.15,14.15,19.85,14.85,11,'#a3743f','#7e5730','#6d4b29');
+    ellipse(X(19.5,14.5),Y(19.5,14.5)-11,7,3.5,GOLD);
+  });
+  return F;
+}
+const FURN=furnitureList();
+
+function wrapText(text,maxW){
+  c.font='12px system-ui';
+  const words=text.split(' '),lines=[]; let cur='';
+  words.forEach(w=>{
+    const t=cur?cur+' '+w:w;
+    if(c.measureText(t).width>maxW&&cur){lines.push(cur);cur=w;} else cur=t;
+  });
+  if(cur)lines.push(cur);
+  return lines.slice(0,3);
+}
+function drawBubble(cx,topY,text,alpha){
+  const lines=wrapText(text,150);
+  c.font='12px system-ui';
+  let maxW=0; lines.forEach(l=>maxW=Math.max(maxW,c.measureText(l).width));
+  const bw=maxW+20,bh=lines.length*15+12, bx=cx-bw/2, by=topY-bh-8;
+  c.globalAlpha=alpha;
+  c.fillStyle='rgba(255,252,244,.96)';
+  c.strokeStyle='rgba(140,110,50,.35)';
+  c.beginPath(); c.roundRect(bx,by,bw,bh,9); c.fill(); c.stroke();
+  c.beginPath(); c.moveTo(cx-5,by+bh); c.lineTo(cx+5,by+bh); c.lineTo(cx,by+bh+7); c.closePath(); c.fill();
+  c.fillStyle='#3a2f14'; c.textAlign='center'; c.textBaseline='top';
+  lines.forEach((l,i)=>c.fillText(l,cx,by+7+i*15));
+  c.globalAlpha=1;
+}
+
+const GOD_STYLE={
+  demeter:{robe:'#668a35',trim:'#c8a84d',hair:'#8b5a2b',head:'#f0c7a1',crown:'laurel'},
+  hades:{robe:'#34364e',trim:'#8b6bd1',hair:'#262332',head:'#d7b8aa',crown:'helm'},
+  hera:{robe:'#8e4e9b',trim:'#f3d36b',hair:'#55356f',head:'#f3c8b8',crown:'crown'},
+  athena:{robe:'#456f9d',trim:'#e3c777',hair:'#60482e',head:'#e8c5a3',crown:'helm'},
+  ares:{robe:'#a83d35',trim:'#e8b85b',hair:'#492c25',head:'#e5b395',crown:'helm'},
+  aphrodite:{robe:'#c45d91',trim:'#f3d58a',hair:'#e1b879',head:'#f4d0c2',crown:'flowers'}
+};
+function pxRect(x,y,w,h,color){ c.fillStyle=color; c.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h)); }
+function drawPerson(cx,cy,color,emoji,bob,walk,id='player'){
+  const s=GOD_STYLE[id]||{robe:color,trim:'#d4af37',hair:'#49372e',head:'#e7bea2',crown:'none'};
+  const y=Math.round(cy-bob), step=walk?Math.sin(performance.now()/95):0;
+  // Bayangan dan tunik dewa berbentuk piksel.
+  pxRect(cx-12,cy+1,24,5,'rgba(10,15,35,.28)');
+  pxRect(cx-9,y-25,18,20,s.robe); pxRect(cx-11,y-22,22,13,s.robe);
+  pxRect(cx-10,y-11,20,4,s.trim); pxRect(cx-2,y-24,4,16,s.trim);
+  // Lengan dan kaki dengan animasi langkah sederhana.
+  pxRect(cx-14,y-22,4,12,s.robe); pxRect(cx+10,y-22,4,12,s.robe);
+  pxRect(cx-8+step*2,y-5,6,7,'#d8c4a8'); pxRect(cx+2-step*2,y-5,6,7,'#d8c4a8');
+  // Kepala, rambut, dan aksen khas tiap penghuni Olympus.
+  pxRect(cx-7,y-39,14,13,s.head); pxRect(cx-8,y-42,16,5,s.hair);
+  pxRect(cx-8,y-33,3,7,s.hair); pxRect(cx+5,y-34,3,8,s.hair);
+  pxRect(cx-4,y-34,2,2,'#302b34'); pxRect(cx+3,y-34,2,2,'#302b34');
+  if(s.crown==='laurel'){
+    pxRect(cx-10,y-45,5,3,'#9cad52'); pxRect(cx-6,y-48,5,3,'#9cad52'); pxRect(cx+1,y-48,5,3,'#9cad52'); pxRect(cx+5,y-45,5,3,'#9cad52');
+  } else if(s.crown==='helm'){
+    pxRect(cx-10,y-45,20,5,s.trim); pxRect(cx-8,y-48,16,4,s.trim); pxRect(cx-10,y-40,4,9,s.trim); pxRect(cx+6,y-40,4,9,s.trim);
+  } else if(s.crown==='crown'){
+    pxRect(cx-9,y-46,18,4,s.trim); pxRect(cx-8,y-50,4,5,s.trim); pxRect(cx-2,y-52,4,7,s.trim); pxRect(cx+5,y-50,4,5,s.trim);
+  } else if(s.crown==='flowers'){
+    pxRect(cx-10,y-46,5,5,'#f59bbd'); pxRect(cx-4,y-49,5,5,'#f8e28a'); pxRect(cx+3,y-48,5,5,'#f59bbd'); pxRect(cx+7,y-44,4,4,'#f8e28a');
+  }
+  // Senjata/perlengkapan kecil agar identitas dewa terbaca dari siluet.
+  if(id==='demeter'){ pxRect(cx+12,y-19,3,13,'#8b5a2b'); pxRect(cx+13,y-25,5,7,'#9cad52'); }
+  if(id==='hades'){ pxRect(cx+13,y-27,3,20,'#6f5a9e'); pxRect(cx+11,y-30,7,4,'#c7b7e8'); }
+  if(id==='athena'){ pxRect(cx-15,y-25,3,14,s.trim); pxRect(cx-17,y-29,7,5,s.trim); }
+  if(id==='ares'){ pxRect(cx+13,y-28,3,20,'#aab4c6'); pxRect(cx+10,y-31,9,4,s.trim); }
+  if(id==='aphrodite'){ pxRect(cx+12,y-23,5,5,'#f59bbd'); pxRect(cx+14,y-28,3,5,'#f59bbd'); }
+  // Emoji dipertahankan kecil sebagai penanda yang sudah dikenal pemain.
+  c.font='12px "apple color emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+  c.textAlign='center'; c.textBaseline='middle'; c.fillText(emoji,cx,y-57);
+}
+
+function statusOf(a){
+  switch(a.state){
+    case 'WORKING': return `Ngerjain: ${a.task}`;
+    case 'WAITING': return 'Nunggu tugas dari bos 🕐';
+    case 'COFFEE': return 'Ngopi ☕';
+    case 'CHATTING': return a.partner?`Ngobrol sama ${a.partner.name}`:'Ngobrol 💬';
+    case 'MEETING': return 'Assembly of Gods 🏛️';
+    case 'LUNCH': return 'Makan ambrosia 🍇';
+    case 'EVENT': return 'Sibuk di pantry 🍯';
+    case 'IDLE': return 'Stretching sebentar 🧘';
+    case 'HIDDEN': return 'Pulang 🏠';
+    case 'toHome': case 'toDesk': case 'toCoffee': case 'toChat': case 'toChatting':
+    case 'toMeeting': case 'toLunch': case 'toEvent': case 'toIdle': case 'toHidden':
+      return 'Jalan-jalan 🚶';
+  }
+  return '…';
+}
+const STATUS_EMOJI={WORKING:'💻',WAITING:'🕐',COFFEE:'☕',CHATTING:'💬',MEETING:'🏛️',LUNCH:'🍇',EVENT:'🍯',IDLE:'🧘',HIDDEN:''};
+
+function draw(){
+  const out=c; c=pc;
+  c.setTransform(1/PIXEL_SCALE,0,0,1/PIXEL_SCALE,0,0);
+  c.clearRect(0,0,cv.width,cv.height);
+  drawOlympusMap();
+  c=out;
+  c.clearRect(0,0,cv.width,cv.height);
+  c.imageSmoothingEnabled=false;
+  c.drawImage(pixelCanvas,0,0,pixelCanvas.width,pixelCanvas.height,0,0,cv.width,cv.height);
+}
+
+// ---------- Update dunia ----------
+function updateSim(dt){
+  const prevMin=Math.floor(gameMin);
+  gameMin+=dt*(1/0.6);
+  if(Math.floor(gameMin)!==prevMin){
+    schedule.forEach(s=>{
+      if(!s.fired&&gameMin>=s.m){
+        s.fired=true;
+        if(s.coffee) coffeeWave(); else if(s.fn) s.fn();
+      }
+    });
+  }
+  ChatMgr.tryStart(dt);
+  ChatMgr.update(dt);
+  Meeting.update(dt);
+  agents.forEach(a=>updateAgent(a,dt));
+  separation();
+  if(evTimer>0){ evTimer-=dt; if(evTimer<=0&&evKind==='ambrosia'){ agents.forEach(a=>{ if(a.state==='EVENT') goDesk(a); }); evKind=null; } }
+  else { nextEventAt-=dt; if(nextEventAt<=0){ nextEventAt=rndf(70,140); if(gameMin>600&&gameMin<1020&&!Meeting.active) triggerEvent(); } }
+}
+
+function updatePlayer(dt){
+  const s=player.spd*dt; let dx=0,dy=0;
+  if(keys['w']||keys['arrowup'])dy-=1;
+  if(keys['s']||keys['arrowdown'])dy+=1;
+  if(keys['a']||keys['arrowleft'])dx-=1;
+  if(keys['d']||keys['arrowright'])dx+=1;
+  if(!dx&&!dy) return;
+  const len=Math.hypot(dx,dy); dx=dx/len*s; dy=dy/len*s;
+  const r=player.r;
+  const free=(x,y)=>walk(Math.floor(x-r),Math.floor(y-r))&&walk(Math.floor(x+r),Math.floor(y-r))&&walk(Math.floor(x-r),Math.floor(y+r))&&walk(Math.floor(x+r),Math.floor(y+r));
+  if(free(player.x+dx,player.y)) player.x+=dx;
+  if(free(player.x,player.y+dy)) player.y+=dy;
+}
+
+// ---------- UI: tab, tim, tugas, chat ----------
+function switchView(v){
+  ['viewFeed','viewTeam','viewTasks','viewChat'].forEach(id=>$(id).classList.toggle('on',id==='view'+v));
+  $('tabFeed').classList.toggle('on',v==='Feed');
+  $('tabTeam').classList.toggle('on',v==='Team');
+  $('tabTasks').classList.toggle('on',v==='Tasks');
+}
+$('tabFeed').onclick=()=>switchView('Feed');
+$('tabTeam').onclick=()=>switchView('Team');
+$('tabTasks').onclick=()=>switchView('Tasks');
+$('chatBack').onclick=()=>switchView('Feed');
+
+function renderTeam(){
+  const g=$('team'); g.innerHTML='';
+  agents.forEach(a=>{
+    const d=document.createElement('div'); d.className='tcard';
+    const mood=a.energy>65?'😄':a.energy>35?'🙂':'😩';
+    d.innerHTML=`<div class="av">${a.emoji}</div><div class="nm">${esc(a.name)}</div><div class="rl">${a.role} • ${mood}</div><div class="st">${esc(statusOf(a))}</div>`;
+    d.onclick=()=>openChat(a);
+    g.appendChild(d);
+  });
+}
+setInterval(renderTeam,1500);
+
+// panel 📋 Tugas: kasih tugas per agent
+const taskRows=[];
+function buildTaskRows(){
+  const g=$('tasks'); g.innerHTML='';
+  agents.forEach(a=>{
+    const d=document.createElement('div'); d.className='trow';
+    d.innerHTML=`
+      <div class="th"><span class="av">${a.emoji}</span>
+        <div><div class="nm">${esc(a.name)}</div><div class="rl">${a.role}</div></div>
+      </div>
+      <div class="pbar"><div></div></div>
+      <div class="ct"></div>
+      <form><input placeholder="Kasih tugas baru…" maxlength="60"><button type="submit">Kasih 📌</button><button type="button" class="rep" title="Minta lapor progress">📢</button></form>`;
+    const inp=d.querySelector('input');
+    d.querySelector('form').addEventListener('submit',e=>{
+      e.preventDefault(); assignTask(a,inp.value); inp.value=''; inp.blur();
+    });
+    d.querySelector('.rep').addEventListener('click',()=>reportNow(a));
+    g.appendChild(d);
+    taskRows.push({a,bar:d.querySelector('.pbar>div'),ct:d.querySelector('.ct')});
+  });
+}
+function renderTasks(){
+  taskRows.forEach(r=>{
+    const a=r.a;
+    if(!a.task){
+      r.bar.style.width='0%';
+      r.ct.innerHTML=`<b style="color:var(--dim)">🕐 Nunggu tugas dari bos</b> • ${esc(statusOf(a))}`;
+    } else {
+      const pct=Math.min(100,Math.floor(a.taskPct));
+      r.bar.style.width=pct+'%';
+      r.ct.innerHTML=`<b>${esc(a.task)}</b> — ${pct}% • ${esc(statusOf(a))}`;
+    }
+  });
+}
+setInterval(renderTasks,1000);
+
+let chatAgent=null;
+function openChat(a){
+  chatAgent=a; switchView('Chat');
+  $('chatAvatar').textContent=a.emoji;
+  $('chatName').textContent=`${a.name} — ${a.role}`;
+  $('chatStatus').textContent=statusOf(a);
+  const m=$('msgs'); m.innerHTML='';
+  addMsg('sys',`Mulai ngobrol sama ${a.name}. ${a.bio}`);
+  addMsg('them',pickReply(a,a.p.greet));
+  pop();
+}
+function addMsg(who,text){
+  const m=$('msgs'); const d=document.createElement('div');
+  d.className='m '+who; d.textContent=text; m.appendChild(d);
+  m.scrollTop=m.scrollHeight; return d;
+}
+function sendChat(){
+  const inp=$('chatInput'); const v=inp.value.trim(); if(!v||!chatAgent) return;
+  inp.value='';
+  addMsg('me',v);
+  const a=chatAgent;
+  a.chatHist=(a.chatHist||[]).concat([{role:'user',content:v}]).slice(-10);
+  showBubble(a,'💬',1.5);
+  const typing=addMsg('them','• • •');
+  const finish=(txt)=>{
+    typing.textContent=txt;
+    a.chatHist=a.chatHist.concat([{role:'assistant',content:txt}]).slice(-10);
+    $('msgs').scrollTop=$('msgs').scrollHeight; pop();
+  };
+  if(llmReady()){
+    llmChat(a,v).then(out=>{
+      showBubble(a,out.length>90?out.slice(0,90)+'…':out,4.5);
+      finish(out);
+    }).catch(err=>{
+      addMsg('sys',`⚠️ LLM gagal (${err.message}) — sementara jawab pakai otak template.`);
+      finish(agentReply(a,v));
+    });
+  } else {
+    finish(agentReply(a,v));
+  }
+}
+$('chatSend').onclick=sendChat;
+$('chatInput').addEventListener('keydown',e=>{ if(e.key==='Enter')sendChat(); e.stopPropagation(); });
+
+// aksi cepat bos di panel chat
+$('actPraise').onclick=()=>{ if(!chatAgent) return;
+  if(chatAgent.state==='HIDDEN'){ addMsg('them','Zzz… besok ya bos 😴'); return; }
+  chatAgent.energy=Math.min(100,chatAgent.energy+15);
+  showBubble(chatAgent,rnd(['Makasih bos! 🙏','Yeay! Makasih bos 💪','Bos paling baik! 🥹']),3);
+  addMsg('them',rnd(['Makasih bos! Semangat gue nambah 🙏','Dipuji bos nih… *pasang muka profesional* 😌','Makasih bos! Gue gaskeun lagi 💪']));
+  log('fun',`👏 Bos muji <b>${esc(chatAgent.name)}</b> — moral naik!`);
+};
+$('actCoffee').onclick=()=>{ if(!chatAgent) return;
+  if(chatAgent.state==='HIDDEN'){ addMsg('them','Udah pulang bos, besok traktir lagi 😴'); return; }
+  chatAgent.energy=Math.min(100,chatAgent.energy+35);
+  const s=rnd(PANTRY_SPOTS); goTo(chatAgent,s[0],s[1],'COFFEE'); chatAgent.stayT=rndf(15,25);
+  showBubble(chatAgent,'Kopi dari bos! Best bos ever ☕✨',3);
+  addMsg('them','Wah traktiran! Gue ambil kopi dulu ya bos ☕');
+  log('fun',`☕ Bos traktir kopi <b>${esc(chatAgent.name)}</b>!`);
+};
+$('actReport').onclick=()=>{ if(chatAgent) reportNow(chatAgent); };
+
+setInterval(()=>{ if(chatAgent&&$('viewChat').classList.contains('on')) $('chatStatus').textContent=statusOf(chatAgent); },1000);
+
+// ---------- Input keyboard ----------
+window.addEventListener('keydown',e=>{
+  if(document.activeElement&&document.activeElement.tagName==='INPUT') return;
+  const k=e.key.toLowerCase();
+  if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k)||['w','a','s','d'].includes(k)) e.preventDefault();
+  keys[k]=true;
+  if(k===' '){ toggleSpeed(); }
+  if(k==='escape'){ $('brainModal').classList.remove('on'); switchView('Feed'); }
+});
+window.addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
+
+function toggleSpeed(){ setSpeed(simSpeed===0?1:0); }
+function setSpeed(s){
+  simSpeed=s;
+  document.querySelectorAll('.spd').forEach(b=>b.classList.toggle('on',parseFloat(b.dataset.s)===s));
+}
+document.querySelectorAll('.spd').forEach(b=>b.onclick=()=>setSpeed(parseFloat(b.dataset.s)));
+$('btnAssembly').onclick=()=>{ if(Meeting.active) return; Meeting.start(); };
+
+// ---------- Modal LLM ----------
+function brainFill(){
+  $('llmProv').value=LLM.provider;
+  $('llmModel').value=LLM.model||LLM_DEF[LLM.provider].model;
+  $('llmModel').placeholder=LLM_DEF[LLM.provider].model;
+  $('llmKey').value=LLM.key||'';
+  $('llmOn').checked=!!LLM.on;
+  $('llmHint').textContent=LLM_DEF[LLM.provider].hint;
+  $('brainStatus').textContent='';
+}
+$('btnBrain').onclick=()=>{ brainFill(); $('brainModal').classList.add('on'); };
+$('brainClose').onclick=()=>$('brainModal').classList.remove('on');
+$('llmProv').onchange=()=>{
+  const p=$('llmProv').value;
+  $('llmModel').value=LLM_DEF[p].model; $('llmModel').placeholder=LLM_DEF[p].model;
+  $('llmHint').textContent=LLM_DEF[p].hint;
+};
+$('brainSave').onclick=()=>{
+  LLM={on:$('llmOn').checked,provider:$('llmProv').value,model:$('llmModel').value.trim(),key:$('llmKey').value.trim()};
+  saveLLM();
+  $('brainStatus').innerHTML=llmReady()
+    ?'<span style="color:#8ef0b1">🟢 LLM aktif — chat agent sekarang pakai AI beneran!</span>'
+    :'🟡 Disimpan, tapi LLM belum aktif (checkbox belum dicentang atau key kosong).';
+};
+$('brainTest').onclick=async()=>{
+  $('brainStatus').textContent='⚡ Menguji sambungan…';
+  const bak=LLM;
+  LLM={on:true,provider:$('llmProv').value,model:$('llmModel').value.trim()||LLM_DEF[$('llmProv').value].model,key:$('llmKey').value.trim()};
+  try{
+    const out=await llmChat({name:'Zeus',role:'QA koneksi',bio:'menguji sambungan.',task:'',taskPct:0,energy:90,chatHist:[]},'Balas dengan satu kata: OKE');
+    $('brainStatus').innerHTML=`<span style="color:#8ef0b1">🟢 Berhasil! Balasan: "${esc(out.slice(0,60))}"</span>`;
+  }catch(e){
+    $('brainStatus').innerHTML=`<span style="color:#ff9a9a">🔴 Gagal: ${esc(String(e.message||e))}</span>`;
+  }
+  LLM=bak; updateBrainBtn();
+};
+
+// ---------- Overlay awal ----------
+$('enter').onclick=()=>{
+  player.emoji='⚡';
+  player.name='Zeus';
+  started=true;
+  $('start').style.display='none';
+  pop();
+  log('info',`⚡ <b>Zeus</b>, Founder PT Olympus Bahagia, memasuki Olympus! Jelajahi wilayah dan singgasana para dewa.`);
+};
+
+// ---------- Header ----------
+function updateHeader(){
+  $('clock').textContent=clockStr(gameMin);
+  $('day').textContent=`Hari ${day} • ${DAYS[(day-1)%5]}`;
+  const on=agents.filter(a=>a.state!=='HIDDEN').length;
+  const idle=agents.filter(a=>!a.task&&a.state!=='HIDDEN').length;
+  $('online').textContent=`🟢 ${on} online • ${idle} idle`;
+}
+setInterval(updateHeader,500);
+
+// ---------- Loop utama ----------
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(0.05,(now-last)/1000); last=now;
+  if(started){
+    if(simSpeed>0) updateSim(dt*simSpeed);
+  }
+  draw();
+  requestAnimationFrame(frame);
+}
+buildTaskRows();
+renderTeam();
+renderTasks();
+updateBrainBtn();
+log('info','🏛️ Selamat datang di <b>PT Olympus Bahagia</b> — pulau para dewa Web3.');
+log('info','⚡ Zeus adalah Founder. Wilayah para dewa terhubung oleh jalan menuju singgasana pusat.');
+requestAnimationFrame(frame);
+
+// polyfill roundRect untuk browser lama
+if(!CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
+    this.moveTo(x+r,y); this.arcTo(x+w,y,x+w,y+h,r); this.arcTo(x+w,y+h,x,y+h,r);
+    this.arcTo(x,y+h,x,y,r); this.arcTo(x,y,x+w,y,r); this.closePath(); return this;
+  };
+}
+</script>
+</body>
+</html>
