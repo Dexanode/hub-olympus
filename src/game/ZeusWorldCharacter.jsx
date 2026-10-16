@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
 import ZeusAgent from './ZeusAgent.jsx';
 
+// Outline of the illustrated floating island, in the same 1600×900 space
+// as percent coordinates (x * 16, y * 9).
 const ISLAND_WALK_AREA = [
-  [160, 389], [310, 295], [495, 229], [680, 151], [874, 162], [1051, 230],
-  [1257, 245], [1424, 364], [1472, 530], [1368, 620], [1283, 728], [1151, 776],
-  [992, 757], [869, 826], [693, 810], [538, 834], [371, 771], [231, 648], [154, 522],
+  [64, 450], [192, 252], [384, 126], [672, 81], [992, 90], [1280, 144],
+  [1504, 252], [1568, 432], [1536, 612], [1344, 738], [1024, 846], [672, 873],
+  [352, 828], [128, 720], [32, 576],
 ];
 
 function isInsideIsland(xPercent, yPercent) {
@@ -24,7 +26,7 @@ const MOVEMENT_KEYS = new Set(['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arro
 
 export default function ZeusWorldCharacter({ frameRef, enabled = true }) {
   const characterRef = useRef(null);
-  const positionRef = useRef({ x: 50, y: 43 });
+  const positionRef = useRef({ x: 50, y: 46 });
 
   useEffect(() => {
     const frame = frameRef.current;

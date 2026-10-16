@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import olympusMap from '../assets/olympus-map.svg';
+import olympusMap from '../assets/olympus-web3-map.jpg';
 
 export default class OlympusScene extends Phaser.Scene {
   constructor() {
@@ -11,8 +11,8 @@ export default class OlympusScene extends Phaser.Scene {
   }
 
   create() {
-    this.add.image(800, 450, 'olympus-map').setDisplaySize(1600, 900);
-    this.cameras.main.setBounds(0, 0, 1600, 900);
-    this.cameras.main.centerOn(800, 450);
+    this.add.image(1000, 558, 'olympus-map').setDisplaySize(2000, 1116);
+    this.cameras.main.setBounds(0, 0, 2000, 1116);
+    this.cameras.main.centerOn(1000, 558);
   }
 }
