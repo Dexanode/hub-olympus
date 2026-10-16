@@ -102,6 +102,26 @@ function mockReply(text, system = '') {
       ? 'Aku Demeter. Ceritakan langkah yang sudah kamu coba. Jangan kirim seed phrase atau private key.'
       : 'I am Demeter. Tell me the step you already tried. Do not send a seed phrase or private key.';
   }
+  if (/throne-room channel/.test(system)) {
+    const offline = system.match(/These agents are not yet online: ([^\n.]+)/);
+    const offlineNote = offline
+      ? (indonesian
+        ? ` ${offline[1]} belum online.`
+        : ` ${offline[1]} is not yet online.`)
+      : '';
+    const consulted = [...system.matchAll(/\n([A-Z][a-z]+) said:/g)].map((match) => match[1]);
+    if (consulted.length) {
+      const names = consulted.join(', ');
+      return indonesian
+        ? `Pemilik, aku bertanya pada ${names}. Jangan kirim seed phrase atau private key.${offlineNote}`
+        : `Owner, I asked ${names}. Do not send a seed phrase or private key.${offlineNote}`;
+    }
+    if (offline) {
+      return indonesian
+        ? `Pemilik, ${offline[1]} belum online. Aku tidak mengarang jawabannya.`
+        : `Owner, ${offline[1]} is not yet online. I will not invent their answer.`;
+    }
+  }
   if (indonesian) {
     return 'Pemilik, aku mendengar. Aku yang menetapkan prioritasnya, lalu aku serahkan ke dewa yang tepat. Aku tidak punya angka langsung untuk itu.';
   }

@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadEnvFile } from './env.js';
 import { createChatHandler, guardStream, resolveAgentId } from './chat.js';
+import { createRoomHandler } from './room.js';
 import { describeProvider } from './providers.js';
 
 loadEnvFile(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.env'));
@@ -11,6 +12,7 @@ loadEnvFile(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.env'
 const port = Number(process.env.PORT || 8787);
 const distDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../dist');
 const handleChat = createChatHandler();
+const handleRoom = createRoomHandler();
 const MAX_BODY = 32_000;
 
 const types = {
@@ -65,6 +67,15 @@ async function readBody(req) {
   }
 }
 
+function writeSse(res) {
+  res.writeHead(200, {
+    'content-type': 'text/event-stream; charset=utf-8',
+    'cache-control': 'no-cache, no-transform',
+    connection: 'keep-alive',
+    'x-accel-buffering': 'no',
+  });
+}
+
 function serveStatic(req, res) {
   if (process.env.SERVE_STATIC === '0' || !fs.existsSync(path.join(distDir, 'index.html'))) return false;
   const url = new URL(req.url || '/', 'http://localhost');
@@ -89,6 +100,23 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, described.ok ? 200 : 503, described);
       return;
     }
+    if (req.method === 'POST' && url.pathname === '/api/room') {
+      const body = await readBody(req);
+      const clientGone = new AbortController();
+      req.on('close', () => clientGone.abort());
+      const result = await handleRoom({ body, ip: clientIp(req), signal: clientGone.signal });
+      if (result.stream) {
+        writeSse(res);
+        for await (const event of result.stream) {
+          if (event.done) res.write('data: [DONE]\n\n');
+          else res.write(`data: ${JSON.stringify(event)}\n\n`);
+        }
+        res.end();
+        return;
+      }
+      sendJson(res, result.status, result.json);
+      return;
+    }
     const chatAgent = resolveAgentId(url.pathname, null);
     if (req.method === 'POST' && (url.pathname === '/api/chat' || chatAgent)) {
       const body = await readBody(req);
@@ -97,12 +125,7 @@ const server = http.createServer(async (req, res) => {
       req.on('close', () => clientGone.abort());
       const result = await handleChat({ body, ip: clientIp(req), signal: clientGone.signal });
       if (result.stream) {
-        res.writeHead(200, {
-          'content-type': 'text/event-stream; charset=utf-8',
-          'cache-control': 'no-cache, no-transform',
-          connection: 'keep-alive',
-          'x-accel-buffering': 'no',
-        });
+        writeSse(res);
         for await (const event of guardStream(result.stream)) {
           if (event.done) res.write('data: [DONE]\n\n');
           else res.write(`data: ${JSON.stringify(event)}\n\n`);

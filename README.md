@@ -21,7 +21,9 @@ Kalau kedua kunci ada, OpenAI yang dipakai, kecuali `LLM_PROVIDER` diset ke `ope
 
 Bicara dengan Zeus atau Demeter lewat sprite mereka di peta. Percakapan tiap dewa tersimpan terpisah. Modal dewa lain tidak berubah.
 
-Perintah terpisah: `npm run dev:web` hanya peta, `npm run dev:api` hanya server chat. Setelah `npm run build`, `npm start` menyajikan build serta `POST /api/chat` dan `POST /api/chat/:agent` dari proses yang sama.
+Di bawah peta ada throne room yang selalu terlihat dan bisa dilipat. Pemilik bicara ke Zeus di situ tanpa membuka modal. Zeus mengarahkan pertanyaan: dewa yang chat-nya aktif (sekarang Demeter) diajak lewat panggilan model kedua, lalu Zeus merangkum. Dewa yang belum aktif disebut belum online, tanpa jawaban karangan. Paling banyak dua konsultasi per pesan. Utas throne room tidak dicampur dengan chat di modal Zeus.
+
+Perintah terpisah: `npm run dev:web` hanya peta, `npm run dev:api` hanya server chat. Setelah `npm run build`, `npm start` menyajikan build serta `POST /api/chat`, `POST /api/chat/:agent`, dan `POST /api/room` dari proses yang sama.
 
 ## Struktur
 
@@ -29,7 +31,9 @@ Perintah terpisah: `npm run dev:web` hanya peta, `npm run dev:api` hanya server 
 - `src/assets/npcs/` — sprite NPC berlatar transparan, dipotong dari lembar karakter.
 - `src/App.jsx` — peta, tag nama, papan peran, judul HUD, dan panel agen.
 - `src/game/ZeusChat.jsx` — panel chat yang sama untuk tiap dewa. Klien memanggil `POST /api/chat/:agent`.
-- `server/index.js` — `POST /api/chat`, `POST /api/chat/:agent`, dan `GET /api/health`.
+- `src/game/ThroneRoom.jsx` — ruang chat di bawah peta. Klien memanggil `POST /api/room`.
+- `server/index.js` — `POST /api/chat`, `POST /api/chat/:agent`, `POST /api/room`, dan `GET /api/health`.
+- `server/room.js` — Zeus mengarahkan pertanyaan, memanggil paling banyak dua dewa yang aktif, lalu merangkum.
 - `server/personas.js` — persona tiap dewa. Zeus dan Demeter aktif; dewa lain tinggal diaktifkan di config ini.
 - `server/providers.js` — OpenAI dan DeepSeek, keduanya lewat API yang kompatibel dengan OpenAI.
 - `src/game/ZeusWorldCharacter.jsx` — gerak Zeus di lantai pulau.

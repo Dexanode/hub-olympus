@@ -9,6 +9,7 @@ import AresAgent from './game/AresAgent.jsx';
 import HadesAgent from './game/HadesAgent.jsx';
 import IslandNpcs from './game/IslandNpcs.jsx';
 import GodChat, { useGodChat } from './game/ZeusChat.jsx';
+import ThroneRoom from './game/ThroneRoom.jsx';
 
 const agents = [
   { id:'zeus', name:'Zeus', role:'Founder / Boss · Executive overview', zone:'THUNDER CITADEL', icon:'ϟ', color:'#f6cf76', status:'Commanding', task:'Review treasury rebalance',  metric:'$2.84M', label:'TREASURY TVL', detail:'Governance, treasury and realm-wide performance at a glance.', stats:[['Treasury','2.84M OLY'],['Active agents','7 / 7'],['Realm uptime','99.98%'],['Open proposals','03']], activity:['Treasury rebalance approved','Realm epoch 208 finalized','Validator quorum: 98.4%'] },
@@ -112,6 +113,7 @@ function App() {
         <div className="world-coordinate">X: 021 <i>·</i> Y: 084 <i>·</i> REALM 001</div><div className="world-tip"><span>✥</span> SELECT A DIVINE AGENT TO OPEN THEIR DOMAIN</div>
         {notice&&<div className="toast"><span>✦</span>{notice}</div>}
       </section>
+      <ThroneRoom />
       <div className="realm-footer"><div><span className="footer-sigil">✧</span><span><b>THE FLOATING ISLES</b><small>Connected by the celestial leyline</small></span></div><div className="footer-legend"><i/> AGENT ONLINE <i className="legend-gold"/> QUEST AVAILABLE <i className="legend-lock"/> LOCKED</div><span className="footer-build">BUILD 2.08.4 <i>·</i> OLYMPUS NETWORK</span></div>
       <section className="realm-roster" aria-label="Divine agent roster">
         {mapAgents.map((agent,index)=><button key={agent.id} className="roster-agent" style={{'--agent':agent.color}} onClick={()=>openAgent(agent)}>
@@ -179,9 +181,9 @@ const layoutOverrides = `
 .board-leg{position:absolute;z-index:-1;top:calc(100% - 2px);width:6px;height:10px;border:1px solid #44372e;background:#795538;box-shadow:inset 1px 0 #b68b58}.leg-left{left:18%}.leg-right{right:18%}
 @media(max-width:760px){.task-board{width:clamp(68px,12cqw,88px)}.task-board-head{height:14px}.task-board-head b{font-size:7px}.task-board-task{font-size:6px}.task-board-status{font-size:5px}}
 .hud-header,.realm-roster,.ambient,.starfield{display:none!important}
-.realm{inset:0;grid-template-rows:minmax(0,1fr)}
-.world{grid-row:1}
-@media(max-width:760px){.realm{grid-template-rows:minmax(0,1fr)}}
+.realm{inset:0;grid-template-rows:minmax(180px,1fr) auto}
+.world{grid-row:1;min-height:180px}
+@media(max-width:760px){.realm{grid-template-rows:minmax(140px,1fr) auto}.world{min-height:140px}}
 .map-art-frame{width:min(100cqw,179.1667cqh);height:min(100cqh,55.814cqw)}
 .world-map-art{mask-image:none}
 .world{background:#101820}
@@ -252,6 +254,29 @@ const layoutOverrides = `
 .zeus-chat-form button{align-self:stretch;min-width:72px;padding:0 12px;border:2px solid #e6c56a;background:#2a2418;color:#f6e2a4;font:700 9px var(--mono);letter-spacing:.12em;cursor:pointer;box-shadow:2px 2px 0 #060b12}
 .zeus-chat-form button:disabled{opacity:.55;cursor:wait}
 @media(prefers-reduced-motion:reduce){.zeus-bubble{transition:none}}
+.throne-room{position:relative;z-index:6;display:flex;flex-direction:column;overflow:hidden;border-top:2px solid #e6c56a;background:#101820;box-shadow:0 -3px 0 #060b12}
+.throne-toggle{display:flex;align-items:center;gap:8px;width:100%;padding:7px 10px;border:0;background:#1c140c;color:#f6e2a4;font:700 9px var(--mono);letter-spacing:.14em;cursor:pointer;text-align:left}
+.throne-crest{display:grid;place-items:center;width:18px;height:18px;border:2px solid #e6c56a;background:#2a2418;color:#f6cf76;font:14px Georgia,serif}
+.throne-toggle b{color:#f6e2a4}
+.throne-toggle small{color:#d7c581;font-weight:500;letter-spacing:.08em}
+.throne-toggle em{margin-left:auto;color:#8d9eb2;font-style:normal;font-size:8px;letter-spacing:.08em}
+.throne-toggle i{color:#e6c56a;font-style:normal}
+.throne-body{display:flex;flex-direction:column;min-height:0;border-top:2px solid #6b4322}
+.throne-log{display:flex;flex-direction:column;gap:6px;height:112px;overflow:auto;padding:8px 10px;background:#0c1422}
+.throne-empty{margin:auto;color:#9aa6b8;font:8px/1.45 var(--mono);letter-spacing:.04em;text-align:center}
+.throne-line{display:flex;gap:8px;align-items:flex-start}
+.throne-icon{display:grid;place-items:center;flex:0 0 22px;height:22px;border:2px solid #6b4322;background:#2a2418;font-size:12px;box-shadow:2px 2px 0 #060b12}
+.throne-line b{display:block;font:700 8px var(--mono);letter-spacing:.12em}
+.throne-line p{margin:2px 0 0;color:#e7edf4;font-size:12px;line-height:1.4;white-space:pre-wrap}
+.throne-line-owner{align-self:flex-end;flex-direction:row-reverse;text-align:right}
+.throne-line-owner p{color:#f6e7c2}
+.throne-error{margin:0;padding:6px 8px;border-top:2px solid #a85a52;background:#2a1414;color:#ffc7bf;font:8px/1.4 var(--mono)}
+.throne-form{display:flex;gap:6px;padding:6px 8px 8px;background:#101820}
+.throne-form input{flex:1;min-width:0;padding:8px;border:2px solid #6b4322;background:#f3e0b0;color:#3a2712;font:12px/1.3 var(--mono);outline:none}
+.throne-form input:disabled{opacity:.7}
+.throne-form button{min-width:72px;padding:0 12px;border:2px solid #e6c56a;background:#2a2418;color:#f6e2a4;font:700 9px var(--mono);letter-spacing:.12em;cursor:pointer;box-shadow:2px 2px 0 #060b12}
+.throne-form button:disabled{opacity:.55;cursor:wait}
+@media(max-width:760px){.throne-log{height:84px}.throne-toggle{gap:6px;padding:6px 8px;font-size:8px}.throne-toggle small{display:none}.throne-line p{font-size:11px}}
 `;
 
 export default App;
