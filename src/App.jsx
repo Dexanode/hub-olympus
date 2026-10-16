@@ -261,6 +261,7 @@ const layoutOverrides = `
 .hub-sizes button[aria-pressed="true"]{border-color:#e6c56a;color:#f6e2a4}
 .hub-bar>em{margin-left:auto;color:#8d9eb2;font:7px var(--mono);font-style:normal;letter-spacing:.08em}
 .hub-body{display:flex;min-height:0;border-top:2px solid #6b4322}
+.hub-chat{min-height:0}
 .olympus-hub.is-small .hub-body{height:220px}
 .olympus-hub.is-half .hub-body{height:min(42vh,380px)}
 .hub-roster{display:flex;flex-direction:column;flex:0 0 188px;overflow:auto;background:#140f0c;border-right:2px solid #6b4322}
