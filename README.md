@@ -1,8 +1,8 @@
-# PT Olympus Bahagia
+# PT Olympus Sejahtera
 
-Prototipe dunia Olympus Web3. Peta realm adalah ilustrasi pulau terapung isometrik di `src/assets/olympus-web3-map.jpg`. React menaruh zona klik pada tujuh ruangan di gambar itu, sprite agen di lantainya, dan Zeus yang bisa berjalan di tangga serta plaza.
+Prototipe dunia PT Olympus Sejahtera. Peta realm adalah ilustrasi pulau terapung tanpa teks di `src/assets/olympus-web3-map.jpg` (2752×1536). Nama tiap dewa tampil di atas spritenya, peran kerjanya ada di papan kecil di sampingnya, dan Zeus bisa berjalan di tangga serta lantai pulau. Sepuluh NPC berjalan di area yang sama.
 
-Hephaestus, Hermes, dan Apollo tetap ada di data agen, tetapi belum punya ruangan di ilustrasi ini.
+Hephaestus, Hermes, dan Apollo tetap ada di data agen, tetapi tidak tampil di peta.
 
 ## Jalankan lokal
 
@@ -15,7 +15,10 @@ Buka alamat lokal yang ditampilkan Vite. Untuk membuat build produksi: `npm run 
 
 ## Struktur
 
-- `src/assets/olympus-web3-map.jpg` — peta ilustrasi Olympus Web3 Agents.
-- `src/App.jsx` — peta, zona klik, HUD, dan panel agen.
+- `src/assets/olympus-web3-map.jpg` — peta pulau tanpa label dan tanpa judul.
+- `src/assets/npcs/` — sprite NPC berlatar transparan, dipotong dari lembar karakter.
+- `src/App.jsx` — peta, tag nama, papan peran, judul HUD, dan panel agen.
 - `src/game/ZeusWorldCharacter.jsx` — gerak Zeus di lantai pulau.
+- `src/game/IslandNpcs.jsx` — NPC yang berjalan, berhenti, dan berbalik di pulau.
+- `src/game/islandWalk.js` — batas lantai, plus penolakan kolam, lava, dan sungai bawah tanah.
 - `legacy.html` — salinan prototipe satu-file sebelumnya, tidak dipakai aplikasi.

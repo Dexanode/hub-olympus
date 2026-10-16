@@ -1,31 +1,10 @@
 import { useEffect, useRef } from 'react';
 import ZeusAgent from './ZeusAgent.jsx';
-
-// Rim of the reference island's floors and stairs, in the 1600×900 space
-// used by percent checks (x * 16, y * 9). The title and open sky sit outside.
-const ISLAND_WALK_AREA = [
-  [288, 117], [288, 216], [128, 270], [72, 378], [72, 522], [112, 594],
-  [96, 702], [144, 810], [256, 864], [640, 873], [992, 873], [1312, 846],
-  [1440, 774], [1504, 630], [1512, 432], [1520, 270], [1488, 162], [1376, 108],
-  [1088, 99], [768, 99], [480, 108],
-];
-
-function isInsideIsland(xPercent, yPercent) {
-  const x = xPercent * 16;
-  const y = yPercent * 9;
-  let inside = false;
-  for (let i = 0, j = ISLAND_WALK_AREA.length - 1; i < ISLAND_WALK_AREA.length; j = i++) {
-    const [xi, yi] = ISLAND_WALK_AREA[i];
-    const [xj, yj] = ISLAND_WALK_AREA[j];
-    const crosses = (yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
-    if (crosses) inside = !inside;
-  }
-  return inside;
-}
+import { isInsideIsland } from './islandWalk.js';
 
 const MOVEMENT_KEYS = new Set(['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright']);
 
-export default function ZeusWorldCharacter({ frameRef, enabled = true }) {
+export default function ZeusWorldCharacter({ frameRef, enabled = true, onOpen }) {
   const characterRef = useRef(null);
   const positionRef = useRef({ x: 50, y: 44 });
 
@@ -43,7 +22,9 @@ export default function ZeusWorldCharacter({ frameRef, enabled = true }) {
     const drawPosition = () => {
       character.style.left = `${positionRef.current.x}%`;
       character.style.top = `${positionRef.current.y}%`;
-      character.style.zIndex = String(4 + Math.round(positionRef.current.y * 10));
+      character.style.zIndex = String(Math.round(positionRef.current.y * 10));
+      const sign = character.querySelector('.god-sign');
+      if (sign) sign.dataset.side = positionRef.current.x > 68 ? 'left' : 'right';
     };
     const setMoving = (next) => {
       if (moving === next) return;
@@ -146,8 +127,12 @@ export default function ZeusWorldCharacter({ frameRef, enabled = true }) {
   }, [enabled, frameRef]);
 
   return (
-    <div ref={characterRef} className="map-zeus-character" data-direction="south" aria-label="Zeus, playable character">
-      <ZeusAgent className="zeus-world-sprite" isActive />
+    <div ref={characterRef} className="map-zeus-character" data-direction="south">
+      <span className="god-name-tag">ZEUS</span>
+      <button type="button" className="god-hit" aria-label="Zeus, Founder / Boss" onClick={onOpen}>
+        <ZeusAgent className="zeus-world-sprite" isActive />
+      </button>
+      <span className="god-sign" data-side="right">Founder / Boss</span>
     </div>
   );
 }
