@@ -8,6 +8,7 @@ import HeraAgent from './game/HeraAgent.jsx';
 import AresAgent from './game/AresAgent.jsx';
 import HadesAgent from './game/HadesAgent.jsx';
 import IslandNpcs from './game/IslandNpcs.jsx';
+import ZeusChat, { useZeusChat } from './game/ZeusChat.jsx';
 
 const agents = [
   { id:'zeus', name:'Zeus', role:'Founder / Boss · Executive overview', zone:'THUNDER CITADEL', icon:'ϟ', color:'#f6cf76', status:'Commanding', task:'Review treasury rebalance',  metric:'$2.84M', label:'TREASURY TVL', detail:'Governance, treasury and realm-wide performance at a glance.', stats:[['Treasury','2.84M OLY'],['Active agents','7 / 7'],['Realm uptime','99.98%'],['Open proposals','03']], activity:['Treasury rebalance approved','Realm epoch 208 finalized','Validator quorum: 98.4%'] },
@@ -59,9 +60,10 @@ function App() {
   const [toggles, setToggles] = useState({ alerts:true, automation:true, public:false });
   const [notice, setNotice] = useState('');
   const mapFrameRef = useRef(null);
+  const zeusChat = useZeusChat();
   const filtered = useMemo(() => chatLines.filter(line => channel === 'GLOBAL' || line[0] === channel || line[0] === 'SYSTEM'), [channel]);
   const act = (text) => { setNotice(text); window.setTimeout(() => setNotice(''), 2400); };
-  const openAgent = (agent) => { setSelected(agent); setTab('OVERVIEW'); };
+  const openAgent = (agent) => { setSelected(agent); setTab(agent.id === 'zeus' ? 'CHAT' : 'OVERVIEW'); };
   const runSlot = (index) => { const a = mapAgents[index % mapAgents.length]; openAgent(a); act(`${a.name.toUpperCase()} ACTION READY`); };
 
   return <div className="olympus-app">
@@ -120,7 +122,8 @@ function App() {
     <aside className="chat-box"><div className="panel-title"><span className="title-glyph">⌘</span><div><b>REALM CHAT</b><small>12,408 ONLINE</small></div><button onClick={()=>act('CHAT WINDOW MINIMIZED')}>−</button></div><div className="chat-tabs">{['GLOBAL','GUILD','SYSTEM'].map(c=><button className={channel===c?'active':''} onClick={()=>setChannel(c)} key={c}>[{c}]</button>)}</div><div className="chat-feed">{filtered.map((l,i)=><div key={i} className={`chat-line ${l[0]==='SYSTEM'?'system':''}`}><span>[{l[0]}]</span><b>{l[1]}:</b><p>{l[2]}</p></div>)}</div><div className="chat-input"><span>›</span><input placeholder="Whisper to Olympus…" onKeyDown={e=>{if(e.key==='Enter'&&e.currentTarget.value){act('MESSAGE SENT TO REALM');e.currentTarget.value='';}}}/><button onClick={()=>act('MESSAGE SENT TO REALM')}>↗</button></div></aside>
     <div className="quest-pill"><i>✦</i><span><small>DAILY QUEST</small><b>Visit 3 Divine Domains</b></span><strong>1/3</strong><div className="quest-track"><i/></div></div>
     <div className="hotbar"><div className="hotbar-label"><b>DIVINE ACTIONS</b><small>QUICK CAST</small></div>{mapAgents.map((a,i)=><button key={a.id} title={`${i+1} · ${a.name}: ${a.role}`} onClick={()=>runSlot(i)} style={{'--slot-color':a.color}}><span>{a.icon}</span><small>{i+1}</small></button>)}</div>
-    {selected&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setSelected(null)}}><section className="agent-modal" style={{'--agent':selected.color}} role="dialog" aria-modal="true" aria-label={`${selected.name} domain details`}><header className="modal-head"><div className="modal-icon">{selected.icon}</div><div className="modal-title"><span>{selected.zone} <i/> <em>AGENT ACTIVE</em></span><h2>{selected.name}<small> · {selected.role.split(' · ')[0]}</small></h2></div><button className="modal-close" onClick={()=>setSelected(null)}>×</button></header><p className="modal-desc">{selected.detail}</p><nav className="modal-tabs">{['OVERVIEW','ACTIVITY','CONTROLS'].map(t=><button key={t} className={tab===t?'active':''} onClick={()=>setTab(t)}>{t}</button>)}</nav>
+    {selected&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setSelected(null)}}><section className={`agent-modal${selected.id==='zeus'?' zeus-modal':''}`} style={{'--agent':selected.color}} role="dialog" aria-modal="true" aria-label={`${selected.name} domain details`}><header className="modal-head"><div className="modal-icon">{selected.icon}</div><div className="modal-title"><span>{selected.zone} <i/> <em>AGENT ACTIVE</em></span><h2>{selected.name}<small> · {selected.role.split(' · ')[0]}</small></h2></div><button className="modal-close" onClick={()=>setSelected(null)}>×</button></header><p className="modal-desc">{selected.detail}</p><nav className="modal-tabs">{(selected.id==='zeus'?['CHAT','OVERVIEW','ACTIVITY','CONTROLS']:['OVERVIEW','ACTIVITY','CONTROLS']).map(t=><button key={t} className={tab===t?'active':''} onClick={()=>setTab(t)}>{t}</button>)}</nav>
+      {tab==='CHAT'&&selected.id==='zeus'&&<ZeusChat chat={zeusChat} />}
       {tab==='OVERVIEW'&&<><div className="metric-hero"><div><small>{selected.label}</small><b>{selected.metric}</b></div><span>↗ 8.4% <small>THIS WEEK</small></span></div><div className="metric-grid">{selected.stats.map(([k,v])=><div key={k}><small>{k}</small><b>{v}</b></div>)}</div><div className="activity-head"><b>RECENT ACTIVITY</b><button onClick={()=>setTab('ACTIVITY')}>VIEW ALL ↗</button></div><div className="activity-list">{selected.activity.slice(0,2).map((x,i)=><div key={x}><i className={i===0?'activity-dot':''}/><span>{x}</span><small>{i===0?'NOW':'4M AGO'}</small></div>)}</div></>}
       {tab==='ACTIVITY'&&<div className="activity-list expanded">{selected.activity.map((x,i)=><div key={x}><i className={i===0?'activity-dot':''}/><span>{x}</span><small>{i===0?'NOW':`${i*4}M AGO`}</small></div>)}</div>}
       {tab==='CONTROLS'&&<div className="control-list">{[['alerts','Live alerts','Receive status and risk notifications.'],['automation','Agent automation','Allow scheduled agent actions.'],['public','Public activity','Show domain activity in the realm feed.']].map(([id,title,sub])=><div key={id}><span><b>{title}</b><small>{sub}</small></span><button className={`toggle ${toggles[id]?'on':''}`} onClick={()=>setToggles({...toggles,[id]:!toggles[id]})}><i/></button></div>)}<button className="primary-action" onClick={()=>act(`${selected.name.toUpperCase()} DASHBOARD OPENED`)}>OPEN {selected.name.toUpperCase()} DASHBOARD ↗</button></div>}
@@ -230,6 +233,22 @@ const layoutOverrides = `
 .island-npc img{display:block;height:100%;width:auto;transform-origin:center bottom;image-rendering:pixelated;filter:drop-shadow(0 2px 1px #090d1780)}
 @media(max-width:760px){.olympus-titlebar{top:8px;left:8px;padding:6px 8px}.olympus-titlebar b{font-size:9px;letter-spacing:.1em}.title-crest{width:16px;height:18px;font-size:12px}.god-name-tag{font-size:7px;letter-spacing:.08em}.god-sign{font-size:6px;border-width:2px;box-shadow:2px 2px 0 #2a180c}}
 @media(prefers-reduced-motion:reduce){.map-zeus-character.is-moving .zeus-agent-art-walk{animation:none}.god-hit:hover,.god-hit:focus-visible{filter:none}}
+.zeus-modal{width:min(560px,calc(100vw - 32px))}
+.zeus-chat{display:flex;flex-direction:column;gap:8px;padding:12px 16px 4px}
+.zeus-chat-meta{display:flex;justify-content:space-between;gap:8px;color:#8d9eb2;font:7px var(--mono);letter-spacing:.08em}
+.zeus-chat-log{display:flex;flex-direction:column;gap:8px;min-height:168px;max-height:240px;overflow:auto;padding:8px;border:2px solid #6b4322;background:#0c1422;box-shadow:inset 0 0 0 1px #e6c56a33}
+.zeus-chat-empty{margin:auto;color:#9aa6b8;font:8px/1.45 var(--mono);letter-spacing:.06em;text-align:center}
+.zeus-bubble{max-width:92%;padding:7px 8px;border:2px solid #3a465c;background:#152033;color:#e7edf4;font-size:12px;line-height:1.45;white-space:pre-wrap}
+.zeus-bubble.user{align-self:flex-end;border-color:#e6c56a;background:#2a2416;color:#f6e7c2}
+.zeus-bubble.assistant{align-self:flex-start}
+.zeus-bubble small{display:block;margin-bottom:3px;color:#e6c56a;font:7px var(--mono);letter-spacing:.12em}
+.zeus-chat-error{margin:0;padding:6px 8px;border:2px solid #a85a52;background:#2a1414;color:#ffc7bf;font:8px/1.4 var(--mono)}
+.zeus-chat-form{display:flex;gap:6px}
+.zeus-chat-form textarea{flex:1;min-height:52px;max-height:96px;resize:vertical;padding:8px;border:2px solid #6b4322;background:#f3e0b0;color:#3a2712;font:12px/1.4 var(--mono);outline:none}
+.zeus-chat-form textarea:disabled{opacity:.7}
+.zeus-chat-form button{align-self:stretch;min-width:72px;padding:0 12px;border:2px solid #e6c56a;background:#2a2418;color:#f6e2a4;font:700 9px var(--mono);letter-spacing:.12em;cursor:pointer;box-shadow:2px 2px 0 #060b12}
+.zeus-chat-form button:disabled{opacity:.55;cursor:wait}
+@media(prefers-reduced-motion:reduce){.zeus-bubble{transition:none}}
 `;
 
 export default App;
