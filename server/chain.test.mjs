@@ -41,6 +41,11 @@ test('onchain routing ignores a wallet that will not connect', () => {
   assert.equal(needsOnchain(`status transaksi ${HASH}`), true);
   assert.equal(needsOnchain(`cek token ${TOKEN}`), true);
   assert.equal(needsOnchain('How is the weather?'), false);
+  assert.equal(needsOnchain('I also like maps.'), false);
+  assert.equal(needsOnchain('Did this Phantom signature land on Solana?'), true);
+  assert.equal(needsOnchain('Check the pump.fun mint.'), true);
+  assert.equal(needsOnchain(`cek ${'1'.repeat(32)}`), true);
+  assert.equal(needsOnchain('1'.repeat(64)), true);
 });
 
 test('lookups reject bad input and never send a write method', async () => {
@@ -49,7 +54,7 @@ test('lookups reject bad input and never send a write method', async () => {
     calls += 1;
     return rpcResult('0x0');
   };
-  const badChain = await executeTool('get_native_balance', { chain: 'solana', address: ADDRESS }, { fetchImpl });
+  const badChain = await executeTool('get_native_balance', { chain: 'bitcoin', address: ADDRESS }, { fetchImpl });
   assert.match(badChain.error, /not allowed/);
   const badAddress = await executeTool('get_native_balance', { chain: 'ethereum', address: '0x123' }, { fetchImpl });
   assert.match(badAddress.error, /40 hex/);
@@ -224,4 +229,210 @@ test('RPC replies are size-capped, timed out, and rate limited', async () => {
     fetchImpl: async () => rpcResult('0x1'),
   });
   assert.match(limited.error, /rate limited/);
+});
+
+const SOL_WALLET = '1'.repeat(32);
+const SOL_SIG = '1'.repeat(64);
+const SOL_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+const SOL_METHODS = new Set([
+  'getBalance',
+  'getTokenAccountsByOwner',
+  'getTokenSupply',
+  'getAccountInfo',
+  'getTransaction',
+  'getSignatureStatuses',
+  'getSignaturesForAddress',
+  'getSlot',
+  'getBlockHeight',
+]);
+
+function solanaResponse(result) {
+  return new Response(JSON.stringify({ jsonrpc: '2.0', id: 1, result }), { status: 200 });
+}
+
+test('Solana lookups use whitelisted JSON-RPC methods and base58 checks', async () => {
+  let calls = 0;
+  const blocked = await executeTool('get_native_balance', { chain: 'solana', address: ADDRESS }, {
+    fetchImpl: async () => {
+      calls += 1;
+      return solanaResponse(0);
+    },
+  });
+  assert.match(blocked.error, /Solana base58/);
+  const badSig = await executeTool('get_transaction', { chain: 'solana', hash: SOL_WALLET }, {
+    fetchImpl: async () => {
+      calls += 1;
+      return solanaResponse(null);
+    },
+  });
+  assert.match(badSig.error, /64 bytes/);
+  const write = await executeTool('sendTransaction', { chain: 'solana', address: SOL_WALLET }, {
+    fetchImpl: async () => {
+      calls += 1;
+      return solanaResponse(null);
+    },
+  });
+  assert.match(write.error, /Unknown lookup/);
+  assert.equal(calls, 0);
+
+  const methods = [];
+  let seenUrl = '';
+  const fetchImpl = async (url, options) => {
+    seenUrl = String(url);
+    const body = JSON.parse(options.body);
+    methods.push(body.method);
+    assert.equal(SOL_METHODS.has(body.method), true);
+    assert.equal(JSON.stringify(body).includes('sendTransaction'), false);
+    if (body.method === 'getSlot') return solanaResponse(321);
+    if (body.method === 'getBlockHeight') return solanaResponse(300);
+    if (body.method === 'getBalance') {
+      assert.deepEqual(body.params, [SOL_WALLET]);
+      return solanaResponse({ context: { slot: 321 }, value: 1_500_000_000 });
+    }
+    if (body.method === 'getAccountInfo') {
+      return solanaResponse({
+        context: { slot: 321 },
+        value: { executable: true, owner: SOL_WALLET, space: 36, data: ['ignored-bytecode', 'base64'] },
+      });
+    }
+    if (body.method === 'getTransaction') {
+      return solanaResponse({ slot: 321, blockTime: 1_700_000_000, meta: { err: null, fee: 5000 } });
+    }
+    if (body.method === 'getSignatureStatuses') {
+      return solanaResponse({ context: { slot: 321 }, value: [{ slot: 321, confirmationStatus: 'finalized', err: null }] });
+    }
+    if (body.method === 'getSignaturesForAddress') {
+      assert.equal(body.params[1].limit, 5);
+      return solanaResponse([{
+        signature: SOL_SIG,
+        slot: 321,
+        blockTime: 1_700_000_000,
+        confirmationStatus: 'finalized',
+        err: null,
+        memo: 'x'.repeat(400),
+      }]);
+    }
+    throw new Error(`unexpected ${body.method}`);
+  };
+
+  const network = await executeTool('get_network', { chain: 'sol' }, {
+    env: { SOLANA_RPC_URL: 'https://rpc.example.test/solana' },
+    fetchImpl,
+  });
+  assert.equal(seenUrl, 'https://rpc.example.test/solana');
+  assert.equal(network.slot, '321');
+  assert.equal(network.blockHeight, '300');
+  assert.equal(network.gasPriceGwei, undefined);
+
+  const balance = await executeTool('get_native_balance', { chain: 'solana', address: SOL_WALLET }, { fetchImpl });
+  assert.equal(balance.balance, '1.5');
+  assert.equal(balance.lamports, '1500000000');
+  assert.equal(balance.slot, '321');
+  assert.equal(balance.nativeSymbol, 'SOL');
+
+  const program = await executeTool('is_contract', { chain: 'solana', address: SOL_WALLET }, { fetchImpl });
+  assert.equal(program.executable, true);
+  assert.equal(JSON.stringify(program).includes('ignored-bytecode'), false);
+
+  const tx = await executeTool('get_transaction', { chain: 'solana', hash: SOL_SIG }, { fetchImpl });
+  assert.equal(tx.status, 'success');
+  assert.equal(tx.signature, SOL_SIG);
+  assert.equal(tx.slot, '321');
+  assert.equal(tx.confirmationStatus, 'finalized');
+  assert.equal(tx.feeLamports, '5000');
+
+  const history = await executeTool('get_tx_history', { chain: 'solana', address: SOL_WALLET }, {
+    env: {},
+    fetchImpl,
+  });
+  assert.equal(history.available, true);
+  assert.equal(history.signatures[0].signature, SOL_SIG);
+  assert.equal(JSON.stringify(history).includes('xxxx'), false);
+  assert.equal(methods.includes('sendTransaction'), false);
+});
+
+test('Solana SPL mint supply and wallet token accounts come from the mocked RPC', async () => {
+  const fetchImpl = async (_url, options) => {
+    const body = JSON.parse(options.body);
+    if (body.method === 'getAccountInfo') {
+      return solanaResponse({
+        context: { slot: 4 },
+        value: {
+          executable: false,
+          owner: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+          data: { parsed: { type: 'mint', info: { decimals: 6, supply: '1000000' } } },
+        },
+      });
+    }
+    if (body.method === 'getTokenSupply') {
+      assert.deepEqual(body.params, [SOL_MINT]);
+      return solanaResponse({ context: { slot: 4 }, value: { amount: '1000000', decimals: 6 } });
+    }
+    if (body.method === 'getTokenAccountsByOwner') {
+      assert.deepEqual(body.params[0], SOL_WALLET);
+      assert.deepEqual(body.params[1], { mint: SOL_MINT });
+      assert.equal(body.params[2].encoding, 'jsonParsed');
+      return solanaResponse({
+        context: { slot: 4 },
+        value: [{
+          pubkey: SOL_WALLET,
+          account: {
+            data: {
+              parsed: {
+                info: {
+                  mint: SOL_MINT,
+                  owner: SOL_WALLET,
+                  tokenAmount: { amount: '2500000', decimals: 6, uiAmount: 2.5 },
+                },
+              },
+            },
+          },
+        }],
+      });
+    }
+    throw new Error(`unexpected ${body.method}`);
+  };
+  const token = await executeTool('get_token', {
+    chain: 'solana',
+    token: SOL_MINT,
+    address: SOL_WALLET,
+  }, { fetchImpl });
+  assert.equal(token.mint, SOL_MINT);
+  assert.equal(token.decimals, 6);
+  assert.equal(token.supply, '1000000');
+  assert.equal(token.supplyUi, '1');
+  assert.equal(token.tokenAccounts[0].balance, '2.5');
+  assert.equal(token.tokenAccounts[0].amount, '2500000');
+  assert.equal(JSON.stringify(token).includes('uiAmount'), false);
+  assert.equal(token.slot, '4');
+});
+
+test('a Solana wallet lists SPL accounts without an explorer key', async () => {
+  const programs = [];
+  const fetchImpl = async (_url, options) => {
+    const body = JSON.parse(options.body);
+    if (body.method === 'getAccountInfo') return solanaResponse({ context: { slot: 8 }, value: null });
+    if (body.method === 'getTokenAccountsByOwner') {
+      programs.push(body.params[1].programId);
+      if (body.params[1].programId === 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA') {
+        return solanaResponse({
+          context: { slot: 8 },
+          value: [{
+            pubkey: SOL_WALLET,
+            account: { data: { parsed: { info: { mint: SOL_MINT, owner: SOL_WALLET, tokenAmount: { amount: '5', decimals: 0 } } } } },
+          }],
+        });
+      }
+      return solanaResponse({ context: { slot: 8 }, value: [] });
+    }
+    throw new Error(body.method);
+  };
+  const listed = await executeTool('get_token', { chain: 'solana', token: SOL_WALLET }, { env: {}, fetchImpl });
+  assert.equal(listed.owner, SOL_WALLET);
+  assert.equal(listed.tokenAccounts[0].balance, '5');
+  assert.equal(listed.risk, 'no account at this address');
+  assert.deepEqual(programs, [
+    'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+    'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
+  ]);
 });

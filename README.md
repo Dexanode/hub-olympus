@@ -23,7 +23,7 @@ Klik dewa di peta membuka Olympus Hub di bawah peta dan memilih dewa itu. Modal 
 
 Hub punya dua bagian dan tiga tinggi: small, half, dan hidden. Kiri adalah roster avatar (Hephaestus, Hermes, dan Apollo tetap disembunyikan). Kanan adalah chat dewa yang dipilih. Layar sempit menaruh roster sebagai strip horizontal di atas chat. Zeus, Demeter, dan Hades online. Dewa lain abu-abu, berlabel coming soon, dan panelnya hanya menampilkan peran. Throne Room Zeus menempel di atas roster: itu satu-satunya utas Zeus, termasuk saat ia mengarahkan pertanyaan ke dewa yang online. Riwayat tiap dewa tersimpan di browser lewat localStorage.
 
-Hades adalah analis onchain. Ia hanya membaca lewat RPC publik (Ethereum, Base, Arbitrum, BSC, Polygon) dan tidak pernah menandatangani transaksi atau menyimpan private key. URL RPC bisa ditimpa lewat `ETH_RPC_URL`, `BASE_RPC_URL`, `ARBITRUM_RPC_URL`, `BSC_RPC_URL`, dan `POLYGON_RPC_URL`. Setiap angka, alamat, atau hash yang ia sebut harus berasal dari hasil alat dan dikutip (chain, blok atau hash transaksi, sumber rpc/explorer). Kalau data tidak ada, ia mengatakan tidak tersedia. Baris kecil `onchain lookup` di chat menampilkan nama alat dan argumennya. `ETHERSCAN_API_KEY` hanya untuk riwayat transaksi; tanpa kunci, lookup RPC tetap jalan dan riwayat dilaporkan tidak tersedia.
+Hades adalah analis onchain. Ia hanya membaca lewat RPC publik (Ethereum, Base, Arbitrum, BSC, Polygon, dan Solana) dan tidak pernah menandatangani transaksi atau menyimpan private key. URL RPC bisa ditimpa lewat `ETH_RPC_URL`, `BASE_RPC_URL`, `ARBITRUM_RPC_URL`, `BSC_RPC_URL`, `POLYGON_RPC_URL`, dan `SOLANA_RPC_URL` (bawaan `https://api.mainnet-beta.solana.com`). Setiap angka, alamat, atau hash yang ia sebut harus berasal dari hasil alat dan dikutip (chain, blok, slot, hash, atau signature Solana, sumber rpc/explorer). Kalau data tidak ada, ia mengatakan tidak tersedia. Baris kecil `onchain lookup` di chat menampilkan nama alat dan argumennya. `ETHERSCAN_API_KEY` hanya untuk riwayat transaksi EVM; tanpa kunci, lookup RPC tetap jalan. Riwayat signature Solana memakai RPC dan tidak butuh kunci itu.
 
 Kalau pertanyaan di utas Demeter butuh data onchain (status transaksi, saldo, cek token atau kontrak), server meminta Hades sekali, menampilkan jawabannya dengan nama dan avatar Hades, lalu Demeter menjelaskan dengan nada dukungan. Pertanyaan "dompet tidak tersambung" tidak memanggil Hades. Throne Room juga mengarahkan pertanyaan onchain ke Hades, paling banyak dua konsultasi per pesan.
 
@@ -39,7 +39,7 @@ Perintah terpisah: `npm run dev:web` hanya peta, `npm run dev:api` hanya server 
 - `server/index.js` — `POST /api/chat`, `POST /api/chat/:agent`, `POST /api/room`, dan `GET /api/health`.
 - `server/room.js` — Zeus mengarahkan pertanyaan, memanggil paling banyak dua dewa yang aktif, lalu merangkum. Pertanyaan onchain ikut memanggil Hades.
 - `server/personas.js` — persona tiap dewa. Zeus, Demeter, dan Hades aktif; dewa lain tinggal diaktifkan di config ini.
-- `server/chain.js` — alat baca Hades: saldo native, metadata ERC-20, transaksi, blok dan gas, serta cek kode kontrak.
+- `server/chain.js` — alat baca Hades: saldo native, token EVM dan SPL, transaksi, blok atau slot, serta cek kontrak atau program Solana.
 - `server/hades.js` — putaran function calling, paling banyak empat putaran alat per pesan.
 - `server/providers.js` — OpenAI dan DeepSeek, keduanya lewat API yang kompatibel dengan OpenAI, termasuk tools.
 - `src/game/ZeusWorldCharacter.jsx` — gerak Zeus di lantai pulau.

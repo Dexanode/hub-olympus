@@ -32,6 +32,7 @@ test('Hades is enabled and the prompt forbids invented chain data', () => {
   assert.match(personas.hades.system, /Indonesian or English/);
   assert.match(personas.hades.system, /Never invent numbers, addresses, or transaction data/);
   assert.match(personas.hades.system, /Cite the chain/);
+  assert.match(personas.hades.system, /Solana/);
   assert.match(personas.hades.system, /unavailable/);
   assert.match(personas.hades.system, /financial advice/);
   assert.match(personas.hades.system, /private key/);
@@ -63,6 +64,39 @@ test('mock Hades cites the mocked balance and does not invent one', async () => 
   assert.equal(result.json.turns[0].lookup.tool, 'get_native_balance');
   assert.equal(result.json.turns[1].speaker, 'hades');
   assert.deepEqual(rpc.methods, ['eth_blockNumber', 'eth_getBalance']);
+});
+
+test('mock Hades cites a Solana balance from the mocked RPC', async () => {
+  const methods = [];
+  const handle = createChatHandler({
+    env: { LLM_PROVIDER: 'mock' },
+    chainFetch: async (_url, options) => {
+      const body = JSON.parse(options.body);
+      methods.push(body.method);
+      assert.equal(body.method, 'getBalance');
+      return new Response(JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        result: { context: { slot: 99 }, value: 2_000_000_000 },
+      }), { status: 200 });
+    },
+  });
+  const result = await handle({
+    body: {
+      agent: 'hades',
+      messages: [{ role: 'user', content: `What is the SOL balance of ${'1'.repeat(32)}?` }],
+      stream: false,
+    },
+    ip: '10.4.1.1',
+  });
+  assert.equal(result.status, 200);
+  assert.equal(result.json.lookups[0].tool, 'get_native_balance');
+  assert.equal(result.json.lookups[0].args.chain, 'solana');
+  assert.equal(result.json.lookups[0].args.address, '1'.repeat(32));
+  assert.match(result.json.reply, /"balance":"2"/);
+  assert.match(result.json.reply, /"slot":"99"/);
+  assert.equal(result.json.reply.includes('999'), false);
+  assert.deepEqual(methods, ['getBalance']);
 });
 
 test('Hades says data is unavailable when the question has nothing to look up', async () => {

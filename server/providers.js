@@ -146,6 +146,33 @@ export function createCompatibleProvider({ name, apiKey, baseUrl, model, fetchIm
 function mockHadesCall(messages) {
   const last = [...(messages || [])].reverse().find((message) => message.role === 'user');
   const text = last?.content || '';
+  const wantsSolana = /\bsolana\b|\bsol\b|\bspl\b|pump\.fun|\bphantom\b|\blamports?\b/i.test(text);
+  if (wantsSolana) {
+    const signature = text.match(/[1-9A-HJ-NP-Za-km-z]{64,90}/)?.[0];
+    const accounts = text.match(/[1-9A-HJ-NP-Za-km-z]{32,44}/g) || [];
+    const chain = 'solana';
+    if (signature && signature.length >= 64) {
+      return { id: 'call_tx', name: 'get_transaction', arguments: JSON.stringify({ chain, hash: signature }) };
+    }
+    if (/\b(slot|block height|blockheight)\b/i.test(text)) {
+      return { id: 'call_net', name: 'get_network', arguments: JSON.stringify({ chain }) };
+    }
+    if (accounts.length && /\b(spl|mint|token|pump\.fun)\b/i.test(text)) {
+      const args = { chain, token: accounts[0] };
+      if (accounts[1]) args.address = accounts[1];
+      return { id: 'call_token', name: 'get_token', arguments: JSON.stringify(args) };
+    }
+    if (accounts.length && /\b(history|riwayat|signatures)\b/i.test(text)) {
+      return { id: 'call_hist', name: 'get_tx_history', arguments: JSON.stringify({ chain, address: accounts[0] }) };
+    }
+    if (accounts.length && /\b(program|executable|contract)\b/i.test(text)) {
+      return { id: 'call_code', name: 'is_contract', arguments: JSON.stringify({ chain, address: accounts[0] }) };
+    }
+    if (accounts.length) {
+      return { id: 'call_bal', name: 'get_native_balance', arguments: JSON.stringify({ chain, address: accounts[0] }) };
+    }
+    return null;
+  }
   const chain = /\bbase\b/i.test(text) ? 'base'
     : /\barbitrum\b|\barb\b/i.test(text) ? 'arbitrum'
       : /\bbsc\b|\bbnb\b/i.test(text) ? 'bsc'
