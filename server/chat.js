@@ -28,6 +28,12 @@ export function createRateLimiter({ limit = DEFAULT_LIMIT, windowMs = DEFAULT_WI
   };
 }
 
+export function resolveAgentId(pathname, body) {
+  const match = String(pathname || '').match(/^\/api\/chat\/([a-z][a-z0-9-]{0,32})$/);
+  if (match) return match[1];
+  return typeof body?.agent === 'string' ? body.agent : '';
+}
+
 export function validateChatBody(body) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
     return { error: 'Send a JSON object with an agent and messages.' };
@@ -106,9 +112,9 @@ function errorStatus(error) {
 }
 
 function errorMessage(error) {
-  if (error?.name === 'TimeoutError' || error?.name === 'AbortError') return 'Zeus took too long to answer.';
+  if (error?.name === 'TimeoutError' || error?.name === 'AbortError') return 'The reply took too long.';
   if (error instanceof ProviderError) return error.message;
-  return 'Zeus could not answer just now.';
+  return 'The chat could not answer just now.';
 }
 
 export async function* guardStream(stream) {

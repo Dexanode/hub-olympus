@@ -2,6 +2,42 @@ import { useEffect, useRef, useState } from 'react';
 
 const MAX_CHARS = 2000;
 
+const chatCopy = {
+  zeus: {
+    name: 'Zeus',
+    empty: 'Ask Zeus for a priority, a decision, or which god should take the work.',
+    placeholder: 'Speak, owner…',
+    speaking: 'ZEUS IS SPEAKING',
+    idle: 'SPEAK WITH ZEUS',
+    aria: 'Message to Zeus',
+    fallback: 'Zeus could not answer.',
+    userLabel: 'OWNER',
+  },
+  demeter: {
+    name: 'Demeter',
+    empty: 'Ask about a wallet, a transaction, an account, or a product. One step at a time. Never send a seed phrase or private key.',
+    placeholder: 'Describe the step you are stuck on…',
+    speaking: 'DEMETER IS REPLYING',
+    idle: 'SPEAK WITH DEMETER',
+    aria: 'Message to Demeter',
+    fallback: 'Demeter could not answer.',
+    userLabel: 'YOU',
+  },
+};
+
+function copyFor(agentId) {
+  return chatCopy[agentId] || {
+    name: agentId,
+    empty: 'Ask a question.',
+    placeholder: 'Write a message…',
+    speaking: 'REPLYING',
+    idle: 'CHAT',
+    aria: `Message to ${agentId}`,
+    fallback: 'The chat could not answer.',
+    userLabel: 'YOU',
+  };
+}
+
 async function readChatStream(response, onDelta) {
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -29,13 +65,14 @@ async function readChatStream(response, onDelta) {
   return reply;
 }
 
-export function useZeusChat() {
+export function useGodChat(agentId) {
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState('');
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
   const [oracle, setOracle] = useState(null);
   const abortRef = useRef(null);
+  const fallback = copyFor(agentId).fallback;
 
   useEffect(() => {
     let cancelled = false;
@@ -76,10 +113,10 @@ export function useZeusChat() {
     const controller = new AbortController();
     abortRef.current = controller;
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch(`/api/chat/${agentId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
-        body: JSON.stringify({ agent: 'zeus', messages: history, stream: true }),
+        body: JSON.stringify({ messages: history, stream: true }),
         signal: controller.signal,
       });
       const type = response.headers.get('content-type') || '';
@@ -95,7 +132,7 @@ export function useZeusChat() {
       setStatus('idle');
     } catch (reason) {
       if (reason?.name === 'AbortError') return;
-      const message = reason?.message || 'Zeus could not answer.';
+      const message = reason?.message || fallback;
       const offline = message === 'Failed to fetch' || message.includes('NetworkError');
       setError(offline ? 'Chat server is not running. Start it with npm run dev:api.' : message);
       setMessages((current) => {
@@ -110,8 +147,13 @@ export function useZeusChat() {
   return { messages, draft, setDraft, status, error, oracle, send, maxChars: MAX_CHARS };
 }
 
-export default function ZeusChat({ chat }) {
+export function useZeusChat() {
+  return useGodChat('zeus');
+}
+
+export default function GodChat({ agentId, chat }) {
   const logRef = useRef(null);
+  const copy = copyFor(agentId);
   const { messages, draft, setDraft, status, error, oracle, send, maxChars } = chat;
 
   useEffect(() => {
@@ -133,15 +175,15 @@ export default function ZeusChat({ chat }) {
     <div className="zeus-chat">
       <div className="zeus-chat-meta">
         <span>{oracleLabel}{oracle?.model ? ` · ${oracle.model}` : ''}</span>
-        <span>{status === 'sending' ? 'ZEUS IS SPEAKING' : 'SPEAK WITH ZEUS'}</span>
+        <span>{status === 'sending' ? copy.speaking : copy.idle}</span>
       </div>
       <div className="zeus-chat-log" ref={logRef} aria-live="polite">
         {messages.length === 0 && (
-          <p className="zeus-chat-empty">Ask Zeus for a priority, a decision, or which god should take the work.</p>
+          <p className="zeus-chat-empty">{copy.empty}</p>
         )}
         {messages.map((message, index) => (
           <div key={`${message.role}-${index}`} className={`zeus-bubble ${message.role}`}>
-            <small>{message.role === 'user' ? 'OWNER' : 'ZEUS'}</small>
+            <small>{message.role === 'user' ? copy.userLabel : copy.name.toUpperCase()}</small>
             {message.content || (status === 'sending' && index === messages.length - 1 ? '…' : '')}
           </div>
         ))}
@@ -157,8 +199,8 @@ export default function ZeusChat({ chat }) {
         <textarea
           value={draft}
           maxLength={maxChars}
-          placeholder="Speak, owner…"
-          aria-label="Message to Zeus"
+          placeholder={copy.placeholder}
+          aria-label={copy.aria}
           disabled={status === 'sending'}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => {

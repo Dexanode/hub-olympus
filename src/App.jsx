@@ -8,7 +8,7 @@ import HeraAgent from './game/HeraAgent.jsx';
 import AresAgent from './game/AresAgent.jsx';
 import HadesAgent from './game/HadesAgent.jsx';
 import IslandNpcs from './game/IslandNpcs.jsx';
-import ZeusChat, { useZeusChat } from './game/ZeusChat.jsx';
+import GodChat, { useGodChat } from './game/ZeusChat.jsx';
 
 const agents = [
   { id:'zeus', name:'Zeus', role:'Founder / Boss · Executive overview', zone:'THUNDER CITADEL', icon:'ϟ', color:'#f6cf76', status:'Commanding', task:'Review treasury rebalance',  metric:'$2.84M', label:'TREASURY TVL', detail:'Governance, treasury and realm-wide performance at a glance.', stats:[['Treasury','2.84M OLY'],['Active agents','7 / 7'],['Realm uptime','99.98%'],['Open proposals','03']], activity:['Treasury rebalance approved','Realm epoch 208 finalized','Validator quorum: 98.4%'] },
@@ -25,6 +25,7 @@ const agents = [
 
 // Hephaestus, Hermes, and Apollo stay in `agents` so they can be mapped later.
 const hiddenOnMap = new Set(['hephaestus', 'hermes', 'apollo']);
+const chatAgents = new Set(['zeus', 'demeter']);
 const mapAgents = agents.filter((agent) => !hiddenOnMap.has(agent.id));
 
 const divineCharacters = {
@@ -60,10 +61,12 @@ function App() {
   const [toggles, setToggles] = useState({ alerts:true, automation:true, public:false });
   const [notice, setNotice] = useState('');
   const mapFrameRef = useRef(null);
-  const zeusChat = useZeusChat();
+  const zeusChat = useGodChat('zeus');
+  const demeterChat = useGodChat('demeter');
+  const godChats = { zeus: zeusChat, demeter: demeterChat };
   const filtered = useMemo(() => chatLines.filter(line => channel === 'GLOBAL' || line[0] === channel || line[0] === 'SYSTEM'), [channel]);
   const act = (text) => { setNotice(text); window.setTimeout(() => setNotice(''), 2400); };
-  const openAgent = (agent) => { setSelected(agent); setTab(agent.id === 'zeus' ? 'CHAT' : 'OVERVIEW'); };
+  const openAgent = (agent) => { setSelected(agent); setTab(chatAgents.has(agent.id) ? 'CHAT' : 'OVERVIEW'); };
   const runSlot = (index) => { const a = mapAgents[index % mapAgents.length]; openAgent(a); act(`${a.name.toUpperCase()} ACTION READY`); };
 
   return <div className="olympus-app">
@@ -122,8 +125,8 @@ function App() {
     <aside className="chat-box"><div className="panel-title"><span className="title-glyph">⌘</span><div><b>REALM CHAT</b><small>12,408 ONLINE</small></div><button onClick={()=>act('CHAT WINDOW MINIMIZED')}>−</button></div><div className="chat-tabs">{['GLOBAL','GUILD','SYSTEM'].map(c=><button className={channel===c?'active':''} onClick={()=>setChannel(c)} key={c}>[{c}]</button>)}</div><div className="chat-feed">{filtered.map((l,i)=><div key={i} className={`chat-line ${l[0]==='SYSTEM'?'system':''}`}><span>[{l[0]}]</span><b>{l[1]}:</b><p>{l[2]}</p></div>)}</div><div className="chat-input"><span>›</span><input placeholder="Whisper to Olympus…" onKeyDown={e=>{if(e.key==='Enter'&&e.currentTarget.value){act('MESSAGE SENT TO REALM');e.currentTarget.value='';}}}/><button onClick={()=>act('MESSAGE SENT TO REALM')}>↗</button></div></aside>
     <div className="quest-pill"><i>✦</i><span><small>DAILY QUEST</small><b>Visit 3 Divine Domains</b></span><strong>1/3</strong><div className="quest-track"><i/></div></div>
     <div className="hotbar"><div className="hotbar-label"><b>DIVINE ACTIONS</b><small>QUICK CAST</small></div>{mapAgents.map((a,i)=><button key={a.id} title={`${i+1} · ${a.name}: ${a.role}`} onClick={()=>runSlot(i)} style={{'--slot-color':a.color}}><span>{a.icon}</span><small>{i+1}</small></button>)}</div>
-    {selected&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setSelected(null)}}><section className={`agent-modal${selected.id==='zeus'?' zeus-modal':''}`} style={{'--agent':selected.color}} role="dialog" aria-modal="true" aria-label={`${selected.name} domain details`}><header className="modal-head"><div className="modal-icon">{selected.icon}</div><div className="modal-title"><span>{selected.zone} <i/> <em>AGENT ACTIVE</em></span><h2>{selected.name}<small> · {selected.role.split(' · ')[0]}</small></h2></div><button className="modal-close" onClick={()=>setSelected(null)}>×</button></header><p className="modal-desc">{selected.detail}</p><nav className="modal-tabs">{(selected.id==='zeus'?['CHAT','OVERVIEW','ACTIVITY','CONTROLS']:['OVERVIEW','ACTIVITY','CONTROLS']).map(t=><button key={t} className={tab===t?'active':''} onClick={()=>setTab(t)}>{t}</button>)}</nav>
-      {tab==='CHAT'&&selected.id==='zeus'&&<ZeusChat chat={zeusChat} />}
+    {selected&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setSelected(null)}}><section className={`agent-modal${chatAgents.has(selected.id)?' zeus-modal':''}`} style={{'--agent':selected.color}} role="dialog" aria-modal="true" aria-label={`${selected.name} domain details`}><header className="modal-head"><div className="modal-icon">{selected.icon}</div><div className="modal-title"><span>{selected.zone} <i/> <em>AGENT ACTIVE</em></span><h2>{selected.name}<small> · {selected.role.split(' · ')[0]}</small></h2></div><button className="modal-close" onClick={()=>setSelected(null)}>×</button></header><p className="modal-desc">{selected.detail}</p><nav className="modal-tabs">{(chatAgents.has(selected.id)?['CHAT','OVERVIEW','ACTIVITY','CONTROLS']:['OVERVIEW','ACTIVITY','CONTROLS']).map(t=><button key={t} className={tab===t?'active':''} onClick={()=>setTab(t)}>{t}</button>)}</nav>
+      {tab==='CHAT'&&godChats[selected.id]&&<GodChat agentId={selected.id} chat={godChats[selected.id]} />}
       {tab==='OVERVIEW'&&<><div className="metric-hero"><div><small>{selected.label}</small><b>{selected.metric}</b></div><span>↗ 8.4% <small>THIS WEEK</small></span></div><div className="metric-grid">{selected.stats.map(([k,v])=><div key={k}><small>{k}</small><b>{v}</b></div>)}</div><div className="activity-head"><b>RECENT ACTIVITY</b><button onClick={()=>setTab('ACTIVITY')}>VIEW ALL ↗</button></div><div className="activity-list">{selected.activity.slice(0,2).map((x,i)=><div key={x}><i className={i===0?'activity-dot':''}/><span>{x}</span><small>{i===0?'NOW':'4M AGO'}</small></div>)}</div></>}
       {tab==='ACTIVITY'&&<div className="activity-list expanded">{selected.activity.map((x,i)=><div key={x}><i className={i===0?'activity-dot':''}/><span>{x}</span><small>{i===0?'NOW':`${i*4}M AGO`}</small></div>)}</div>}
       {tab==='CONTROLS'&&<div className="control-list">{[['alerts','Live alerts','Receive status and risk notifications.'],['automation','Agent automation','Allow scheduled agent actions.'],['public','Public activity','Show domain activity in the realm feed.']].map(([id,title,sub])=><div key={id}><span><b>{title}</b><small>{sub}</small></span><button className={`toggle ${toggles[id]?'on':''}`} onClick={()=>setToggles({...toggles,[id]:!toggles[id]})}><i/></button></div>)}<button className="primary-action" onClick={()=>act(`${selected.name.toUpperCase()} DASHBOARD OPENED`)}>OPEN {selected.name.toUpperCase()} DASHBOARD ↗</button></div>}

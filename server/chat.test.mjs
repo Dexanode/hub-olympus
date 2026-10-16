@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createChatHandler } from './chat.js';
+import { createChatHandler, resolveAgentId } from './chat.js';
 import { completionsUrl, describeProvider } from './providers.js';
 
 const owner = { role: 'user', content: 'What should we do today?' };
@@ -63,12 +63,14 @@ test('mock provider streams deltas', async () => {
 
 test('disabled gods stay closed', async () => {
   const handle = handler({ LLM_PROVIDER: 'mock' });
-  const result = await handle({
-    body: { agent: 'athena', messages: [owner] },
-    ip: '10.0.0.5',
-  });
-  assert.equal(result.status, 403);
-  assert.match(result.json.error, /not available/);
+  for (const agent of ['athena', 'aphrodite', 'hera', 'ares', 'hades']) {
+    const result = await handle({
+      body: { agent, messages: [owner] },
+      ip: `10.0.5.${agent.length}`,
+    });
+    assert.equal(result.status, 403, agent);
+    assert.match(result.json.error, /not available/);
+  }
 });
 
 test('long input is rejected', async () => {
@@ -151,4 +153,56 @@ test('a provider timeout becomes a clear error', async () => {
   });
   assert.equal(result.status, 504);
   assert.match(result.json.error, /too long/i);
+});
+
+test('Demeter answers as support and refuses seed phrases', async () => {
+  const handle = handler({ LLM_PROVIDER: 'mock' });
+  const english = await handle({
+    body: { agent: 'demeter', messages: [{ role: 'user', content: 'My wallet will not connect.' }], stream: false },
+    ip: '10.0.0.11',
+  });
+  assert.equal(english.status, 200);
+  assert.match(english.json.reply, /I am Demeter/);
+  assert.match(english.json.reply, /seed phrase/);
+
+  const indonesian = await handle({
+    body: { agent: 'demeter', messages: [{ role: 'user', content: 'Tolong, dompet saya tidak tersambung.' }], stream: false },
+    ip: '10.0.0.12',
+  });
+  assert.match(indonesian.json.reply, /Aku Demeter/);
+  assert.match(indonesian.json.reply, /private key/);
+});
+
+test('the chat path names the god and Demeter prompt is what the model receives', async () => {
+  assert.equal(resolveAgentId('/api/chat/demeter', { agent: 'zeus' }), 'demeter');
+  assert.equal(resolveAgentId('/api/chat', { agent: 'zeus' }), 'zeus');
+  assert.equal(resolveAgentId('/api/chat/../zeus', null), '');
+  assert.equal(resolveAgentId('/api/chat/Demeter', null), '');
+
+  let seen;
+  const fetchImpl = async (_url, options) => {
+    seen = options;
+    return new Response('data: {"choices":[{"delta":{"content":"Step one."}}]}\n\ndata: [DONE]\n\n', {
+      status: 200,
+      headers: { 'content-type': 'text/event-stream' },
+    });
+  };
+  const handle = handler({
+    LLM_PROVIDER: 'deepseek',
+    DEEPSEEK_API_KEY: 'test-key-not-real',
+  }, fetchImpl);
+  const ok = await handle({
+    body: { agent: 'demeter', messages: [{ role: 'user', content: 'Wallet will not connect.' }], stream: false },
+    ip: '10.0.0.13',
+  });
+  assert.equal(ok.json.reply, 'Step one.');
+  const system = JSON.parse(seen.body).messages[0].content;
+  assert.match(system, /customer-support lead/);
+  assert.match(system, /seed phrase/);
+  assert.match(system, /scam/);
+  assert.match(system, /Never invent/);
+  assert.match(system, /Escalate a decision or a priority to Zeus/);
+  assert.match(system, /Ares/);
+  assert.match(system, /Hades/);
+  assert.equal(system.includes('test-key-not-real'), false);
 });

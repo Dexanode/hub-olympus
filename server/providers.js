@@ -82,7 +82,7 @@ export function createCompatibleProvider({ name, apiKey, baseUrl, model, fetchIm
         });
       } catch (error) {
         if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
-          throw new ProviderError(504, 'Zeus took too long to answer.');
+          throw new ProviderError(504, 'The reply took too long.');
         }
         throw new ProviderError(502, 'The language model could not be reached.');
       }
@@ -95,8 +95,13 @@ export function createCompatibleProvider({ name, apiKey, baseUrl, model, fetchIm
   };
 }
 
-function mockReply(text) {
+function mockReply(text, system = '') {
   const indonesian = /[^\u0000-\u007f]/u.test(text) || /\b(saya|aku|kamu|apa|tolong|bagaimana|yang|tidak|bantu)\b/i.test(text);
+  if (/You are Demeter/.test(system)) {
+    return indonesian
+      ? 'Aku Demeter. Ceritakan langkah yang sudah kamu coba. Jangan kirim seed phrase atau private key.'
+      : 'I am Demeter. Tell me the step you already tried. Do not send a seed phrase or private key.';
+  }
   if (indonesian) {
     return 'Pemilik, aku mendengar. Aku yang menetapkan prioritasnya, lalu aku serahkan ke dewa yang tepat. Aku tidak punya angka langsung untuk itu.';
   }
@@ -107,13 +112,13 @@ export function createMockProvider(env = {}) {
   const delay = Number(env.MOCK_STREAM_DELAY_MS || 0);
   return {
     name: 'mock',
-    model: 'mock-zeus',
-    async *stream({ messages, signal }) {
+    model: 'mock',
+    async *stream({ system, messages, signal }) {
       const last = [...messages].reverse().find((message) => message.role === 'user');
-      const reply = mockReply(last?.content || '');
+      const reply = mockReply(last?.content || '', system);
       const parts = reply.split(/(\s+)/);
       for (const part of parts) {
-        if (signal?.aborted) throw new ProviderError(504, 'Zeus took too long to answer.');
+        if (signal?.aborted) throw new ProviderError(504, 'The reply took too long.');
         if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
         yield part;
       }

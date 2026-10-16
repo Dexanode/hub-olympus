@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadEnvFile } from './env.js';
-import { createChatHandler, guardStream } from './chat.js';
+import { createChatHandler, guardStream, resolveAgentId } from './chat.js';
 import { describeProvider } from './providers.js';
 
 loadEnvFile(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.env'));
@@ -89,8 +89,10 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, described.ok ? 200 : 503, described);
       return;
     }
-    if (req.method === 'POST' && url.pathname === '/api/chat') {
+    const chatAgent = resolveAgentId(url.pathname, null);
+    if (req.method === 'POST' && (url.pathname === '/api/chat' || chatAgent)) {
       const body = await readBody(req);
+      if (chatAgent) body.agent = chatAgent;
       const clientGone = new AbortController();
       req.on('close', () => clientGone.abort());
       const result = await handleChat({ body, ip: clientIp(req), signal: clientGone.signal });
